@@ -1,6 +1,7 @@
 /*.kml
+/craig2kml
 /dist/
-
+/obj/
 
 # Mac OS X Finder and whatnot
 .DS_Store
