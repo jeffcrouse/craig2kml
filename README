@@ -14,10 +14,16 @@ but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 General Public License for more details.
 
+
 INTRODUCTION
 ----------------
 This project started as Earthify (http://www.earthify.org), which kept breaking.
 I also heard recently that some websites that were scraping Craigslist were being blocked.  So I decided to take the idea and turn it into a simple c++ program that anyone could use on their own computer, or install on a server and make a Google Maps wrapper (which I plan to do at some point at earthify.org).
+
+
+NOTES
+-------------
+Each listing that is parsed makes a call to the Google Geocoder API.  According to the "Usage Limits" section of the documentation (http://code.google.com/apis/maps/documentation/geocoding/#Limits), you can only perform 2,500 queries per day.  Presumably this is based on IP address.
 
 
 REQUIREMENTS
@@ -36,6 +42,7 @@ This will create the KML file "brooklynrental.kml" and populate it with placemar
 
 1) Have a link to a Google Map on the page, as many Craigslist listings do
 2) Are geolocatable using the google Geolocation service: http://code.google.com/apis/maps/documentation/geocoding/
+
 
 TO DO
 --------------
