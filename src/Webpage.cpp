@@ -131,7 +131,7 @@ const char* Webpage::getNodeAsString(string exp)
 {
 	xmlXPathObjectPtr obj = xpath(exp);
 	xmlNodeSetPtr nodeset = obj->nodesetval;
-	if(nodeset->nodeNr>0)
+	if(nodeset && nodeset->nodeNr>0)
 	{
 		xmlBufferPtr buf = xmlBufferCreate();
 		xmlSaveCtxtPtr savectx = xmlSaveToBuffer(buf, 0, XML_SAVE_FORMAT);
@@ -151,26 +151,41 @@ const char* Webpage::getNodeAsString(string exp)
 }
 
 // -------------------------------------------------------------
-// Gets the Google Maps address string out of a Craigslist page 
-// or an empty string if it doesn't exist.
-string Webpage::getGoogleAddress()
+const char* Webpage::getNodeAttribute(string exp, string attrib)
 {
-	string link;
-	
-	xmlXPathObjectPtr obj = xpath("/body/div/small/a");
+	const xmlChar* contents;
+	xmlXPathObjectPtr obj = xpath(exp);
 	xmlNodeSetPtr nodeset = obj->nodesetval;
-	string prefix = "http://maps.google.com/?q=loc%3A+";
-	if(nodeset->nodeNr > 0)
+	
+	if(nodeset && nodeset->nodeNr > 0)
 	{
-		link = (char*)xmlGetProp(nodeset->nodeTab[0], (const xmlChar *)"href");
-		link.erase(0, prefix.length());
+		contents = xmlGetProp(nodeset->nodeTab[0], (const xmlChar *)attrib.c_str());
 	}
 	xmlXPathFreeObject(obj);
-	return link;
+
+	return (const char*)contents;
 }
 
 // -------------------------------------------------------------
+const char* Webpage::getNodeContents(string exp)
+{
+	const xmlChar* contents;
+	xmlXPathObjectPtr obj = xpath(exp);
+	xmlNodeSetPtr nodeset = obj->nodesetval;
+	
+	if(nodeset && nodeset->nodeNr > 0)
+	{
+		contents =  xmlNodeListGetString(doc, nodeset->nodeTab[0]->children, 1);
+	}
+	xmlXPathFreeObject(obj);
+	
+	return (const char*)contents;
+}
+
+/*
+// -------------------------------------------------------------
 // Gets the latitude and longitude out of a Google geocoding result 
+// Replaced by other methods
 float* Webpage::getGoogleLatLng()
 {
 	xmlXPathObjectPtr obj = xpath("/GeocodeResponse/status");
@@ -200,7 +215,6 @@ float* Webpage::getGoogleLatLng()
 		}
 		cur = cur->next;
 	}
-
 	
 	latlng[0] = atof((const char*)lat);
 	latlng[1] = atof((const char*)lng);
@@ -208,7 +222,7 @@ float* Webpage::getGoogleLatLng()
 	xmlXPathFreeObject(obj);
 	return latlng;
 }
-
+*/
 // -------------------------------------------------------------
 int Webpage::writeData(char *data, size_t size, size_t nmemb, std::string *buffer)
 {

@@ -36,19 +36,21 @@ public:
 	map<string,string> getLinks(string exp);
 	
 	
-	// Gets the Google Maps address string out of a Craigslist page 
-	// or an empty string if it doesn't exist.
-	string	getGoogleAddress();
+	const char* getNodeAttribute(string exp, string atrrib);
 	
 	// Gets the latitude and longitude out of a Google geocoding result 
-	float* getGoogleLatLng();
+	//float* getGoogleLatLng();
 	
 	// Get all images from a page
 	vector<string> getImages(string exp);
 	
+	// Get a raw XML representation of a node specified by an xpath
 	const char* getNodeAsString(string exp);
 	
-protected:
+	
+	const char* getNodeContents(string exp);
+	
+//protected:
 	xmlXPathObjectPtr xpath(string exp);
 	static int writeData(char *data, size_t size, size_t nmemb, std::string *buffer);
 

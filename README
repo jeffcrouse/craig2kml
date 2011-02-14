@@ -37,7 +37,7 @@ libCurl		http://curl.haxx.se/
 
 EXAMPLE USAGE
 ---------------
-craig2kml --url "http://newyork.craigslist.org/search/nfa?query=&srchType=A&minAsk=&maxAsk=2000&bedrooms=&addTwo=purrr&hasPic=1" -o brooklynrental.kml
+craig2kml -v --url "http://newyork.craigslist.org/search/nfa?query=&srchType=A&minAsk=&maxAsk=2000&bedrooms=&addTwo=purrr&hasPic=1" -o brooklynrental.kml
 
 This will create the KML file "brooklynrental.kml" and populate it with placemarks for all of the listings that:
 
@@ -45,12 +45,14 @@ This will create the KML file "brooklynrental.kml" and populate it with placemar
 2) Are geolocatable using the google Geolocation service: http://code.google.com/apis/maps/documentation/geocoding/
 
 
+
 TO DO
 --------------
-- Separate out the xpath expressions into a settings file so they are easily changeable
+- Don't overwrite output file until the end, but check to make sure that it we can create the file at the beginning.
 - Better error checking
-- Provide sample PHP usage code
+- Provide sample JavaScript usage code
 - Use other contextual information to map non-mappable listings, such as title of the page and other geographic data
 - Create option to follow pagination
 - There are probably tons of memory leaks.  I haven't done much releasing at all.
-- makefile
+- Fix prebuild script so that the generated Makefile works.
+- Option to send output to stdout rather than file
