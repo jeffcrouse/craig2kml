@@ -41,7 +41,7 @@ TO DO
 --------------
 - Separate out the xpath expressions into a settings file so they are easily changeable
 - Better error checking
-- Add images and other information to listing descriptions
 - Provide sample PHP usage code
 - Use other contextual information to map non-mappable listings, such as title of the page and other geographic data
 - Create option to follow pagination
+- There are probably tons of memory leaks.  I haven't done much releasing at all.
