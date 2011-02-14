@@ -188,10 +188,7 @@
 					"/usr/local/include/kml/**",
 				);
 				INSTALL_PATH = /usr/local/bin;
-				LIBRARY_SEARCH_PATHS = (
-					"$(inherited)",
-					/opt/local/lib,
-				);
+				LIBRARY_SEARCH_PATHS = "$(inherited)";
 				PRODUCT_NAME = "$(TARGET_NAME)Debug";
 			};
 			name = Debug;
@@ -209,10 +206,7 @@
 					"/usr/local/include/kml/**",
 				);
 				INSTALL_PATH = /usr/local/bin;
-				LIBRARY_SEARCH_PATHS = (
-					"$(inherited)",
-					/opt/local/lib,
-				);
+				LIBRARY_SEARCH_PATHS = "$(inherited)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;

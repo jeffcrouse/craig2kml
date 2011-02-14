@@ -17,21 +17,22 @@ General Public License for more details.
 
 INTRODUCTION
 ----------------
-This project started as Earthify (http://www.earthify.org), which kept breaking.
-I also heard recently that some websites that were scraping Craigslist were being blocked.  So I decided to take the idea and turn it into a simple c++ program that anyone could use on their own computer, or install on a server and make a Google Maps wrapper (which I plan to do at some point at earthify.org).
+This project started as Earthify (http://www.earthify.org), which kept breaking.  I also heard recently that some websites that were scraping Craigslist were being blocked.  So I decided to take the idea and turn it into a simple c++ program that anyone could use on their own computer, or install on a server and make a Google Maps wrapper (which I plan to do at some point at earthify.org).
 
 
 NOTES
 -------------
-Each listing that is parsed makes a call to the Google Geocoder API.  According to the "Usage Limits" section of the documentation (http://code.google.com/apis/maps/documentation/geocoding/#Limits), you can only perform 2,500 queries per day.  Presumably this is based on IP address.
+- Each listing that is parsed makes a call to the Google Geocoder API.  According to the "Usage Limits" section of the documentation (http://code.google.com/apis/maps/documentation/geocoding/#Limits), you can only perform 2,500 queries per day.  Presumably this is based on IP address.
+
+- I use premake to generate makefiles.  You can find more information about it here http://industriousone.com/premake  This is not a requirement for building, but if you are having trouble building, you might want to take a look at the premake documentation.
 
 
 REQUIREMENTS
 ----------------
 TidyLib		http://tidy.sourceforge.net/
-libXML
+libXML2		http://xmlsoft.org/
 libKML  	http://code.google.com/p/libkml/
-libCurl
+libCurl		http://curl.haxx.se/
 
 
 EXAMPLE USAGE
@@ -52,3 +53,4 @@ TO DO
 - Use other contextual information to map non-mappable listings, such as title of the page and other geographic data
 - Create option to follow pagination
 - There are probably tons of memory leaks.  I haven't done much releasing at all.
+- makefile

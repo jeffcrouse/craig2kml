@@ -34,8 +34,8 @@ int main (int argc, char* argv[])
 		{
 			if (i+1 == argc) {
 				// error messages intermingled with parsing logic
-				cout << "Invalid " << argv[i];
-				cout << " parameter: no outfile specified\n";
+				cerr << "Invalid " << argv[i];
+				cerr << " parameter: no outfile specified\n";
 				help();
 				exit(1); // multiple exit points in parsing algorithm
 			}
@@ -44,15 +44,15 @@ int main (int argc, char* argv[])
 		else if (strcmp(argv[i], "-u") == 0 || strcmp(argv[i], "--url") == 0)
 		{
 			if (i+1 == argc) {
-				cout << "Invalid " << argv[i];
-				cout << " parameter: no URL specified\n";
+				cerr << "Invalid " << argv[i];
+				cerr << " parameter: no URL specified\n";
 				help();
 				exit(1);
 			}
 			url = argv[++i];
 		}
 		else if (strcmp(argv[i], "--version") == 0) {
-			printf("craig2kml version %f", VERSION);
+			fprintf(stderr, "craig2kml version %f", VERSION);
 			exit(0);
 		}
 	}
@@ -69,11 +69,12 @@ int main (int argc, char* argv[])
 	ofstream myfile;
 	myfile.open(outfile);
 	if(!myfile.is_open()) {
-		cout << "Couldn't open " << outfile << " for writing." << endl;
+		cerr << "Couldn't open " << outfile << " for writing." << endl;
 		return -1;
 	}
 	
 	// Create the main page with all of the listings
+	cerr << "opening " << url << endl;
 	Webpage listingsPage(url);
 	
 
@@ -83,6 +84,7 @@ int main (int argc, char* argv[])
 	map<string,string>::iterator it;
 	links = listingsPage.getLinks("/body/blockquote/p/a");
 	int numLinks = links.size();
+	cerr << "Retrieved " << numLinks << " links." << endl;
 	
 	// Get the factory singleton to create KML elements.
 	KmlFactory* factory = KmlFactory::GetFactory();
