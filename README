@@ -20,11 +20,16 @@ INTRODUCTION
 This project started as Earthify (http://www.earthify.org), which kept breaking.  I also heard recently that some websites that were scraping Craigslist were being blocked.  So I decided to take the idea and turn it into a simple c++ program that anyone could use on their own computer, or install on a server and make a Google Maps wrapper (which I plan to do at some point at earthify.org).
 
 
-NOTES
+FAQ
 -------------
-- Each listing that is parsed makes a call to the Google Geocoder API.  According to the "Usage Limits" section of the documentation (http://code.google.com/apis/maps/documentation/geocoding/#Limits), you can only perform 2,500 queries per day.  Presumably this is based on IP address.
+1.  Why not just use the rss feeds?
+The RSS feeds only include the most recent 25 entries.  By scraping the page, you can get all 100.  In future versions, it will follow the pagination also.
 
-- I use premake to generate makefiles.  You can find more information about it here http://industriousone.com/premake  This is not a requirement for building, but if you are having trouble building, you might want to take a look at the premake documentation.
+2. Is there a limit to how often I can use craig2kml?
+Each listing that is parsed makes a call to the Google Geocoder API.  According to the "Usage Limits" section of the documentation (http://code.google.com/apis/maps/documentation/geocoding/#Limits), you can only perform 2,500 queries per day.  Presumably this is based on IP address.
+
+3. The makefile isn't working.  What's up?
+I use premake to generate makefiles.  You can find more information about it here http://industriousone.com/premake  This is not a requirement for building, but if you are having trouble building, you might want to take a look at the premake documentation.
 
 
 REQUIREMENTS
@@ -39,11 +44,7 @@ EXAMPLE USAGE
 ---------------
 craig2kml -v --url "http://newyork.craigslist.org/search/nfa?query=&srchType=A&minAsk=&maxAsk=2000&bedrooms=&addTwo=purrr&hasPic=1" -o brooklynrental.kml
 
-This will create the KML file "brooklynrental.kml" and populate it with placemarks for all of the listings that:
-
-1) Have a link to a Google Map on the page, as many Craigslist listings do
-2) Are geolocatable using the google Geolocation service: http://code.google.com/apis/maps/documentation/geocoding/
-
+This will create the KML file "brooklynrental.kml" and populate it with placemarks.  There are 2 folders: Mappable Listings and Unmappable Listings. The unmappable ones (those without a google maps link or fail geocoding) are placed in the middle of the mappable ones.
 
 
 TO DO
@@ -55,6 +56,5 @@ TO DO
 - Use other contextual information to map non-mappable listings, such as title of the page and other geographic data
 - Create option to follow pagination
 - There are probably tons of memory leaks.  I haven't done much releasing at all.
-- Add "unmapable listings"
 - Fix prebuild script so that the generated Makefile works.
 - When you compile with the makefile, there are no results??  faulty linking?

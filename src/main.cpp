@@ -12,6 +12,7 @@
 #include <iostream>
 #include <fstream>
 #include <kml/dom.h>
+#include <kml/engine.h>
 #include "Webpage.h"
 
 using namespace std;
@@ -21,7 +22,7 @@ using kmldom::KmlFactory;
 using kmldom::PlacemarkPtr;
 using kmldom::PointPtr;
 using kmldom::FolderPtr;
-
+using kmlengine::Bbox;
 
 // Some global vars.
 const char* outfilepath=NULL;
@@ -140,12 +141,14 @@ int main (int argc, char* argv[])
 	
 	// Loop through all of the links on the page.
 	int i=0;
-	int parsed=0;
-	for(it = links.begin(); it != links.end() && (parsed<maxListings); ++it)
+	Bbox bbox;
+	vector<PlacemarkPtr> unmappable;
+	for(it = links.begin(); it != links.end() && (i<maxListings); ++it)
 	{
 		string title = it->first;
 		string url = it->second;
 		if(verbose) cerr << "Parsing " << i << " out of " << numLinks << ": " << title << endl;
+		
 		i++;
 		try {
 			Webpage listing(url);
@@ -154,58 +157,87 @@ int main (int argc, char* argv[])
 			
 			string description = listing.getNodeAsString(config["craigslist_item_description"]);
 			
-			if(addr.empty())
-			{
-				if(verbose) cerr << "No Google Maps found on " << url << " Skipping." << endl;
-				continue;
-			}
-
-			string geocodeURL = config["google_geocode_base"] + addr;
-			
-			if(verbose) cerr << "calling " << geocodeURL << endl;
-			
-			Webpage geocode(geocodeURL, true);
-			const char* status = geocode.getNodeContents(config["google_geocode_status"]);
-			if(strcmp(status, "OK")!=0)
-			{
-				if(verbose) cerr << "geocode failed for " << addr << endl;
-				continue;
-			}
-
-		
-			float lat = atof(geocode.getNodeContents(config["google_geocode_lat"]));
-			float lng = atof(geocode.getNodeContents(config["google_geocode_lng"]));
-			
-			if(verbose) cerr << "Adding placemark at " << lat << ", " << lng << endl;
-			
-			// Create <coordinates>.
-			CoordinatesPtr coordinates = factory->CreateCoordinates();
-			
-			// Create <coordinates>-122.0816695,37.42052549<coordinates>
-			coordinates->add_latlng(lat, lng);
-			
-			// Create <Point> and give it <coordinates>.
-			PointPtr point = factory->CreatePoint();
-			point->set_coordinates(coordinates);  // point takes ownership
-			
 			// Create <Placemark> and give it a <name> and the <Point>.
 			PlacemarkPtr placemark = factory->CreatePlacemark();
 			placemark->set_name(title);
-			placemark->set_geometry(point);  // placemark takes ownership
 			placemark->set_description(description);
 			
-			// Add it to the folder
-			mapableListings->add_feature(placemark);
-			
-			
-			parsed++;
+			if(!addr.empty())
+			{
+				string geocodeURL = config["google_geocode_base"] + addr;
+				if(verbose) cerr << "calling " << geocodeURL << endl;
+				Webpage geocode(geocodeURL, true);
+				
+				const char* status = geocode.getNodeContents(config["google_geocode_status"]);
+				if(strcmp(status, "OK")==0)
+				{
+					float lat = atof(geocode.getNodeContents(config["google_geocode_lat"]));
+					float lng = atof(geocode.getNodeContents(config["google_geocode_lng"]));
+					
+					// Expand the bounding box of all mappable listings
+					bbox.ExpandLatLon(lat, lng);
+					
+					if(verbose) cerr << "Adding placemark at " << lat << ", " << lng << endl;
+					
+					// Create <coordinates>.
+					CoordinatesPtr coordinates = factory->CreateCoordinates();
+					
+					// Create <coordinates>-122.0816695,37.42052549<coordinates>
+					coordinates->add_latlng(lat, lng);
+					
+					// Create <Point> and give it <coordinates>.
+					PointPtr point = factory->CreatePoint();
+					point->set_coordinates(coordinates);  // point takes ownership
+					
+					placemark->set_geometry(point);  // placemark takes ownership
+					
+					// Add it to the folder
+					mapableListings->add_feature(placemark);
+				}
+				else
+				{
+					if(verbose) cerr << "geocode failed for " << addr << endl;
+					unmappable.push_back(placemark);
+				}
+			}
+			else
+			{
+				if(verbose) cerr << "No Google Maps found on " << url << " Unmapable." << endl;
+				unmappable.push_back(placemark);
+			}
+
 		} catch(exception& e) {
-			if(verbose) cerr << e.what() << endl;
-			continue;
+			if(verbose) cerr << "ERROR:  " << e.what() << endl;
 		}
 	}
 
-	if(verbose) cerr << "parsed " << parsed << " out of " << numLinks << " links" << endl;
+	double mid_lat, mid_lon;
+	bbox.GetCenter(&mid_lat, &mid_lon);
+	FolderPtr unmapableListings = factory->CreateFolder();
+	unmapableListings->set_name("Unmapable Listings");
+	
+	// Add it to the main KML object
+	root->add_feature(unmapableListings);  // kml takes ownership.
+
+	for(int i=0; i<unmappable.size(); i++)
+	{
+		// Create <coordinates>.
+		CoordinatesPtr coordinates = factory->CreateCoordinates();
+		
+		// Create <coordinates>-122.0816695,37.42052549<coordinates>
+		coordinates->add_latlng(mid_lat, mid_lon);
+		
+		// Create <Point> and give it <coordinates>.
+		PointPtr point = factory->CreatePoint();
+		point->set_coordinates(coordinates);  // point takes ownership
+		
+		unmappable[i]->set_geometry(point);  // placemark takes ownership
+		
+		// Add it to the folder
+		unmapableListings->add_feature(unmappable[i]);
+		
+	}
+	
 	
 	// Serialize to XML
 	std::string xml = SerializePretty(kml);
