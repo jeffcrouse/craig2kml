@@ -20,6 +20,7 @@ using kmldom::KmlPtr;
 using kmldom::KmlFactory;
 using kmldom::PlacemarkPtr;
 using kmldom::PointPtr;
+using kmldom::FolderPtr;
 
 
 // Some global vars.
@@ -27,6 +28,7 @@ const char* outfilepath=NULL;
 const char* url=NULL;
 const char* configfilename=NULL;
 bool verbose=false;
+int maxListings=999;
 
 // Some helper functions.
 void load_config_file(const char* filename, map<string,string>& config);
@@ -109,24 +111,42 @@ int main (int argc, char* argv[])
 	// Create <kml>
 	KmlPtr kml = factory->CreateKml();
 	
+	// Create the root folder
+	FolderPtr root = factory->CreateFolder();
+	root->set_name("Craig2KML");
+
+	// Add it to the main KML object
+	kml->set_feature(root);  // kml takes ownership.
+	
+	
+	// Create the description for the main folder
+	time_t t = time(0); //obtain the current time_t value
+	tm now=*localtime(&t); //convert it to tm
+	char tmdescr[255]={0};
+	strftime(tmdescr, sizeof(tmdescr)-1, "%A, %B %d %Y. %X", &now);
+	char desc[1024];
+	sprintf(desc, "\"%s\" %s on %s", listingsPage.getNodeContents("//title"), url, tmdescr);
+	if(verbose) cerr << desc << endl;
+	root->set_description(desc);
+	
+	
 	// Make a folder for all of the mapable listings
-	kmldom::FolderPtr folder = factory->CreateFolder();
-	folder->set_name("Mapable Listings");
+	FolderPtr mapableListings = factory->CreateFolder();
+	mapableListings->set_name("Mapable Listings");
 	
 	// Add it to the main KML object
-	kml->set_feature(folder);  // kml takes ownership.
+	root->add_feature(mapableListings);  // kml takes ownership.
 	
 	
 	// Loop through all of the links on the page.
 	int i=0;
-	for(it = links.begin(); it != links.end(); ++it)
+	int parsed=0;
+	for(it = links.begin(); it != links.end() && (parsed<maxListings); ++it)
 	{
 		string title = it->first;
 		string url = it->second;
-		if(verbose)
-			cerr << "Parsing " << i << " out of " << numLinks << ": " << title << endl;
+		if(verbose) cerr << "Parsing " << i << " out of " << numLinks << ": " << title << endl;
 		i++;
-		
 		try {
 			Webpage listing(url);
 			string addr = listing.getNodeAttribute(config["craigslist_google_maps_link"], "href");
@@ -148,7 +168,7 @@ int main (int argc, char* argv[])
 			const char* status = geocode.getNodeContents(config["google_geocode_status"]);
 			if(strcmp(status, "OK")!=0)
 			{
-				if(verbose) cerr << "geocode failed for " << addr << endl;	
+				if(verbose) cerr << "geocode failed for " << addr << endl;
 				continue;
 			}
 
@@ -175,14 +195,18 @@ int main (int argc, char* argv[])
 			placemark->set_description(description);
 			
 			// Add it to the folder
-			folder->add_feature(placemark);		
+			mapableListings->add_feature(placemark);
+			
+			
+			parsed++;
 		} catch(exception& e) {
-			if(verbose)
-				cerr << e.what() << endl;
+			if(verbose) cerr << e.what() << endl;
 			continue;
 		}
 	}
 
+	if(verbose) cerr << "parsed " << parsed << " out of " << numLinks << " links" << endl;
+	
 	// Serialize to XML
 	std::string xml = SerializePretty(kml);
 
@@ -209,11 +233,12 @@ void help()
 {
 	cout << "typical: (-u|--url ) #### [(-o|--outfile) ####]" << endl;
 	cout << "  where:" << endl;
-	cout << "  -u (--url) [required]" << endl;
-	cout << "      the Craigslist search page URL to be translated" << endl;
+	cout << "  -c (--config) use custom config values";
+	cout << "  -m (--max) maximum number of listings to include";
 	cout << "  -o (--outfile) is the file in which the kml will be saved" << endl;
 	cout << "     prints to stdout if no file is provided." << endl;
-	cout << "  -c (--config) use custom config values";
+	cout << "  -u (--url) [required]" << endl;
+	cout << "      the Craigslist search page URL to be translated" << endl;
 	cout << "  -v (--verbose) print messages to stderr";
 }
 
@@ -253,6 +278,16 @@ void parse_args(int argc, char* argv[])
 				exit(1);
 			}
 			configfilename = argv[++i];
+		}
+		else if(strcmp(argv[i], "--max") == 0 || strcmp(argv[i], "-m") == 0)
+		{
+			if (i+1 == argc) {
+				cerr << "Invalid " << argv[i];
+				cerr << " parameter: no integer provided\n";
+				help();
+				exit(1);
+			}
+			maxListings = atoi(argv[++i]);
 		}
 		else if(strcmp(argv[i], "--verbose") == 0 || strcmp(argv[i], "-v") == 0)
 		{

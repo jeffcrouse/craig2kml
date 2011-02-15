@@ -50,13 +50,11 @@ TO DO
 --------------
 - Don't overwrite output file until the end, but check to make sure that it we can create the file at the beginning.
 - Better error checking
+- use regular expression instead of xpath for google maps link?
 - Provide sample JavaScript usage code
 - Use other contextual information to map non-mappable listings, such as title of the page and other geographic data
 - Create option to follow pagination
 - There are probably tons of memory leaks.  I haven't done much releasing at all.
+- Add "unmapable listings"
 - Fix prebuild script so that the generated Makefile works.
-- complicated one:  
-PROBLEM: When you compile with the makefile, it currently doesn't work because TidyLib kills the content somehow.  
-BACKGROUND: I originally added the "show-body-only" option in the constructor of Webpage.cpp because it also got rid of the doctype line.  The doctype line kills the parser.  However, this also makes lots of config options confusing because they start at /body rather than /html
-SOLUTION 1:  A better solution would be to set the TidyLib "doctype" option to "omit", but i can't seem to figure out how to do this.  SOLUTION 2:  Instead, I will just see if the first line of the contents returned by CURL starts with <!DOCTYPE, and if it does, I will kill the entire first line.  
-RESULT:  This might fix the makefile problem.  then again, it might not.  It might just be caused by some faulty linking.
+- When you compile with the makefile, there are no results??  faulty linking?

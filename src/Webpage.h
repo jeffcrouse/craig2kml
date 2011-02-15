@@ -50,6 +50,7 @@ public:
 	static string userAgent;
 	
 protected:
+	
 	xmlXPathObjectPtr xpath(string exp);
 	static int writeData(char *data, size_t size, size_t nmemb, std::string *buffer);
 

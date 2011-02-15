@@ -49,11 +49,13 @@ Webpage::Webpage(string url, bool wellFormed)
 		throw std::runtime_error(errorBuffer);						
 	}
 
+	//cout << "\n\n\n\n-------------------------\n\n\n\n\n"  << contents << endl;
+	
 	if(!wellFormed)
 	{
 		try {
 			TidyDoc _tdoc = tidyCreate();
-			tidyOptSetBool(_tdoc, tidyOptGetIdForName("show-body-only"), (Bool)1);
+			//tidyOptSetBool(_tdoc, tidyOptGetIdForName("show-body-only"), (Bool)1);
 			tidyOptSetBool(_tdoc, tidyOptGetIdForName("output-xhtml"), (Bool)1);
 			tidyOptSetBool(_tdoc, tidyOptGetIdForName("quote-nbsp"), (Bool)0);
 			tidyOptSetBool(_tdoc, tidyOptGetIdForName("show-warnings"), (Bool)0);
@@ -68,12 +70,19 @@ Webpage::Webpage(string url, bool wellFormed)
 			TidyBuffer output = {0};
 			tidySaveBuffer(_tdoc, &output);
 			contents = string((char*)output.bp, (size_t)output.size);
-			contents = "<body>\n"+contents+"\n</body>";
 		} catch (exception& e) {
 			throw e.what();
 		}	
 	}
 	
+	// get rid of doctype line.  It messes up the parser
+	string prefix = "<!DOCTYPE";
+	if(contents.compare(0, prefix.size(), prefix)==0)
+	{
+		size_t pos = contents.find(">");
+		contents.erase(0, pos+1);
+	}
+
 	doc = xmlParseMemory(contents.c_str(), contents.length());
 	if (doc == NULL) {
 		throw "Error: unable to parse HTML";
