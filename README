@@ -55,4 +55,3 @@ TO DO
 - Create option to follow pagination
 - There are probably tons of memory leaks.  I haven't done much releasing at all.
 - Fix prebuild script so that the generated Makefile works.
-- Option to send output to stdout rather than file

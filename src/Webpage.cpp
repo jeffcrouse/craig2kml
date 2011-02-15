@@ -9,6 +9,9 @@
 
 #include "Webpage.h"
 
+// -------------------------------------------------------------
+string Webpage::userAgent = "Mozilla/5.0";
+
 
 // -------------------------------------------------------------
 Webpage::Webpage(string url, bool wellFormed)
@@ -19,18 +22,26 @@ Webpage::Webpage(string url, bool wellFormed)
 	if (!curl) {
 		throw "Couldn't create CURL object.";
 	}
-
+	
+	// Set the headers
+	struct curl_slist *headers=NULL;
+	char user_agent_header[255];
+	sprintf(user_agent_header, "User-Agent: %s", Webpage::userAgent.c_str());
+	headers = curl_slist_append(headers, user_agent_header);
+	
 	// TO DO:
 	// Set timeout limit
 	// put the whoel thing in a try block
 	curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, errorBuffer);
 	curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-	curl_easy_setopt(curl, CURLOPT_HEADER, 0);
+	curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
 	curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1);
 	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writeData);
 	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &contents);
 	result = curl_easy_perform(curl);
 	curl_easy_cleanup(curl);
+	curl_slist_free_all(headers);
+	
 	
 	// Did we succeed?
 	if (result != CURLE_OK)
@@ -117,14 +128,6 @@ map<string,string> Webpage::getLinks(string exp)
 	return links;
 }
 
-// -------------------------------------------------------------
-vector<string> Webpage::getImages(string exp)
-{
-	vector<string> images;
-	
-	
-	return images;
-}
 
 // -------------------------------------------------------------
 const char* Webpage::getNodeAsString(string exp)

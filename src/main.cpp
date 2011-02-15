@@ -20,7 +20,7 @@ void help() {
 	cout << "  -u (--url) [required]" << endl;
 	cout << "      the Craigslist search page URL to be translated" << endl;
 	cout << "  -o (--outfile) is the file in which the kml will be saved" << endl;
-	cout << "     defaults to 'craigslist.kml' if not specified." << endl;
+	cout << "     prints to stdout if no file is provided." << endl;
 	cout << "  -c (--config) use custom config values";
 	cout << "  -v (--verbose) print messages to stderr";
 }
@@ -37,11 +37,15 @@ int main (int argc, char* argv[])
 	config["google_geocode_lng"]			= "/GeocodeResponse/result/geometry/location/lng";
 	config["craigslist_google_maps_link_prefix"] = "http://maps.google.com/?q=loc%3A+";
 	config["craigslist_item_description"]	= "//div[@id='userbody']";
+	config["user_agent"]					= "Mozilla/5.0";
 	
-	const char* outfile="craigslist.kml";
+	
+	const char* outfilepath=NULL;
 	const char* url=NULL;
 	const char* configfilename=NULL;
 	bool verbose=false;
+	ofstream outfile;
+	
 	
 	// Parse command line options.
 	for(int i = 1; i < argc; ++i) {
@@ -54,7 +58,7 @@ int main (int argc, char* argv[])
 				help();
 				exit(1); // multiple exit points in parsing algorithm
 			}
-			outfile = argv[++i];  // parsing action goes here
+			outfilepath = argv[++i];  // parsing action goes here
 		}
 		else if (strcmp(argv[i], "-u") == 0 || strcmp(argv[i], "--url") == 0)
 		{
@@ -88,9 +92,20 @@ int main (int argc, char* argv[])
 	}
 
 	// We can't do anything without a URL
-	if(url==NULL) {
+	if(url==NULL)
+	{
 		help();
 		exit(1);
+	}
+	
+	// If the user provided an output file, try to open it.
+	if(outfilepath!=NULL)
+	{
+		outfile.open(outfilepath);
+		if(!outfile.is_open()) {
+			cerr << "Couldn't open " << outfilepath << " for writing." << endl;
+			return -1;
+		}	
 	}
 	
 	// Parse the config file if it exists.
@@ -110,7 +125,7 @@ int main (int argc, char* argv[])
 					getline( liness, value, ' ' );
 					if(config.find(name) != config.end())
 					{
-						cout << "setting " << name << " to " << value << endl;
+						if(verbose) cerr << "setting " << name << " to " << value << endl;
 						config[name] = value;
 					}
 					else {
@@ -126,26 +141,22 @@ int main (int argc, char* argv[])
 		}
 	}
 
+	
+	Webpage::userAgent = config["user_agent"];
+	
 	/* Set up libXML */
 	xmlInitParser();
 	
-	// Make sure we can open the output file.
-	// TO DO:  don't create the file until the end.
-	ofstream myfile;
-	myfile.open(outfile);
-	if(!myfile.is_open()) {
-		cerr << "Couldn't open " << outfile << " for writing." << endl;
-		return -1;
-	}
-	
 	
 	// Create the main page with all of the listings
-	cerr << "opening " << url << endl;
+	if(verbose) cerr << "opening " << url << endl;
 	Webpage listingsPage(url);
 	
 
 	// All of the listings are within /body/blockquote/p
 	// These are the links to individual listing pages
+	// first = title
+	// second = link
 	map<string,string> links;
 	map<string,string>::iterator it;
 	links = listingsPage.getLinks(config["craigslist_links"]);
@@ -179,7 +190,6 @@ int main (int argc, char* argv[])
 			cerr << "Parsing " << i << " out of " << numLinks << ": " << title << endl;
 		i++;
 		
-		
 		try {
 			Webpage listing(url);
 			string addr = listing.getNodeAttribute(config["craigslist_google_maps_link"], "href");
@@ -189,7 +199,7 @@ int main (int argc, char* argv[])
 			
 			if(addr.empty())
 			{
-				if(verbose) cerr << "No address found... Skipping." << endl;
+				if(verbose) cerr << "No Google Maps found on " << url << " Skipping." << endl;
 				continue;
 			}
 
@@ -236,15 +246,20 @@ int main (int argc, char* argv[])
 		}
 	}
 
-	
 	// Serialize to XML
-	std::string xml = kmldom::SerializePretty(kml);
+	std::string xml = SerializePretty(kml);
 
 	// Write it to file
-	myfile << xml;
-	myfile.close();
-	
-	
+	if(outfile.is_open())
+	{
+		outfile << xml;
+		outfile.close();
+	}
+	else
+	{
+		cout << xml << endl;
+	}
+
 	/* Shutdown libxml */
     xmlCleanupParser();
 }

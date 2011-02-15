@@ -35,27 +35,25 @@ public:
 	// Gets a map of the content and href od all links within a given xpath expression
 	map<string,string> getLinks(string exp);
 	
-	
-	const char* getNodeAttribute(string exp, string atrrib);
-	
+
 	// Gets the latitude and longitude out of a Google geocoding result 
 	//float* getGoogleLatLng();
 	
-	// Get all images from a page
-	vector<string> getImages(string exp);
-	
-	// Get a raw XML representation of a node specified by an xpath
+	// Node stuff
 	const char* getNodeAsString(string exp);
-	
-	
 	const char* getNodeContents(string exp);
+	const char* getNodeAttribute(string exp, string atrrib);
+
+//private:	
+	static string userAgent;
 	
-//protected:
+protected:
 	xmlXPathObjectPtr xpath(string exp);
 	static int writeData(char *data, size_t size, size_t nmemb, std::string *buffer);
 
 	xmlDocPtr doc;
 	xmlXPathContextPtr xpathCtx;
 	string contents;
+	
 };
 
