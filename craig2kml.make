@@ -28,7 +28,7 @@ ifeq ($(config),debug)
   CPPFLAGS  += -MMD -MP $(DEFINES) $(INCLUDES)
   CFLAGS    += $(CPPFLAGS) $(ARCH) -g
   CXXFLAGS  += $(CFLAGS) 
-  LDFLAGS   += -L/opt/local/lib -L/usr/lib
+  LDFLAGS   += -L/opt/local/lib -L/usr/local/lib -L/usr/lib
   LIBS      += -lxml2 -ltidy -lcurl -lkmlbase -lkmlconvenience -lkmldom -lkmlengine
   RESFLAGS  += $(DEFINES) $(INCLUDES) 
   LDDEPS    += 
@@ -50,7 +50,7 @@ ifeq ($(config),release)
   CPPFLAGS  += -MMD -MP $(DEFINES) $(INCLUDES)
   CFLAGS    += $(CPPFLAGS) $(ARCH) -O2
   CXXFLAGS  += $(CFLAGS) 
-  LDFLAGS   += -Wl,-x -L/opt/local/lib -L/usr/lib
+  LDFLAGS   += -Wl,-x -L/opt/local/lib -L/usr/local/lib -L/usr/lib
   LIBS      += -lxml2 -ltidy -lcurl -lkmlbase -lkmlconvenience -lkmldom -lkmlengine
   RESFLAGS  += $(DEFINES) $(INCLUDES) 
   LDDEPS    += 

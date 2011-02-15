@@ -9,7 +9,13 @@ project "craig2kml"
 	links { 
 		"xml2", "tidy", "curl",
 		"kmlbase", "kmlconvenience", "kmldom", "kmlengine" }
-	libdirs { "/opt/local/lib", os.findlib("xml2"), os.findlib("curl")   }
+	libdirs { 
+		"/opt/local/lib", 
+		"/usr/local/lib", 
+		os.findlib("kmlbase"),
+		os.findlib("tidy"),
+		os.findlib("xml2"), 
+		os.findlib("curl")   }
 	includedirs { 
 		"/opt/local/include",
 		"/opt/local/include/libxml2", 

@@ -1,8 +1,18 @@
+/*
+ *  main.cpp
+ *  craig2kml
+ *
+ *  Created by Jeffrey Crouse on 2/14/11.
+ *  Copyright 2011 Eyebeam. All rights reserved.
+ *
+ */
+
+#define VERSION 0.1
 
 #include <iostream>
+#include <fstream>
 #include <kml/dom.h>
 #include "Webpage.h"
-#include <fstream>
 
 using namespace std;
 using kmldom::CoordinatesPtr;
@@ -11,20 +21,19 @@ using kmldom::KmlFactory;
 using kmldom::PlacemarkPtr;
 using kmldom::PointPtr;
 
-#define VERSION 0.1
 
+// Some global vars.
+const char* outfilepath=NULL;
+const char* url=NULL;
+const char* configfilename=NULL;
+bool verbose=false;
 
-void help() {
-	cout << "typical: (-u|--url ) #### [(-o|--outfile) ####]" << endl;
-	cout << "  where:" << endl;
-	cout << "  -u (--url) [required]" << endl;
-	cout << "      the Craigslist search page URL to be translated" << endl;
-	cout << "  -o (--outfile) is the file in which the kml will be saved" << endl;
-	cout << "     prints to stdout if no file is provided." << endl;
-	cout << "  -c (--config) use custom config values";
-	cout << "  -v (--verbose) print messages to stderr";
-}
+// Some helper functions.
+void load_config_file(const char* filename, map<string,string>& config);
+void parse_args(int argc, char* argv[]);
+void help();
 
+// -----------------------------------------
 int main (int argc, char* argv[])
 {
 	// Default config options
@@ -39,57 +48,8 @@ int main (int argc, char* argv[])
 	config["craigslist_item_description"]	= "//div[@id='userbody']";
 	config["user_agent"]					= "Mozilla/5.0";
 	
-	
-	const char* outfilepath=NULL;
-	const char* url=NULL;
-	const char* configfilename=NULL;
-	bool verbose=false;
-	ofstream outfile;
-	
-	
 	// Parse command line options.
-	for(int i = 1; i < argc; ++i) {
-		if (strcmp(argv[i], "-o") == 0 || strcmp(argv[i], "--outfile") == 0)
-		{
-			if (i+1 == argc) {
-				// error messages intermingled with parsing logic
-				cerr << "Invalid " << argv[i];
-				cerr << " parameter: no outfile specified\n";
-				help();
-				exit(1); // multiple exit points in parsing algorithm
-			}
-			outfilepath = argv[++i];  // parsing action goes here
-		}
-		else if (strcmp(argv[i], "-u") == 0 || strcmp(argv[i], "--url") == 0)
-		{
-			if (i+1 == argc) {
-				cerr << "Invalid " << argv[i];
-				cerr << " parameter: no URL specified\n";
-				help();
-				exit(1);
-			}
-			url = argv[++i];
-		}
-		else if(strcmp(argv[i], "--config") == 0 || strcmp(argv[i], "-c") == 0)
-		{
-			if (i+1 == argc) {
-				cerr << "Invalid " << argv[i];
-				cerr << " parameter: no config file specified\n";
-				help();
-				exit(1);
-			}
-			configfilename = argv[++i];
-		}
-		else if(strcmp(argv[i], "--verbose") == 0 || strcmp(argv[i], "-v") == 0)
-		{
-			verbose=true;
-		}
-		else if (strcmp(argv[i], "--version") == 0)
-		{
-			fprintf(stderr, "craig2kml version %f", VERSION);
-			exit(0);
-		} 
-	}
+	parse_args(argc, argv);
 
 	// We can't do anything without a URL
 	if(url==NULL)
@@ -99,6 +59,7 @@ int main (int argc, char* argv[])
 	}
 	
 	// If the user provided an output file, try to open it.
+	ofstream outfile;
 	if(outfilepath!=NULL)
 	{
 		outfile.open(outfilepath);
@@ -111,38 +72,12 @@ int main (int argc, char* argv[])
 	// Parse the config file if it exists.
 	if(configfilename!=NULL)
 	{
-		string line, name, value;
-		ifstream configfile(configfilename);
-		if (configfile.is_open())
-		{
-			while( configfile.good() )
-			{
-				getline(configfile, line);
-				if(!line.empty() && line[0]!='#')
-				{
-					istringstream liness( line );
-					getline( liness, name, ' ' );
-					getline( liness, value, ' ' );
-					if(config.find(name) != config.end())
-					{
-						if(verbose) cerr << "setting " << name << " to " << value << endl;
-						config[name] = value;
-					}
-					else {
-						cerr << "Unrecognized config option: " << name << endl;
-					}
-				}
-			}
-			configfile.close();
-		}
-		else 
-		{
-			cerr << "Unable to open configfile" << endl; 
-		}
+		load_config_file(configfilename, config);
 	}
 
 	
 	Webpage::userAgent = config["user_agent"];
+	
 	
 	/* Set up libXML */
 	xmlInitParser();
@@ -162,6 +97,8 @@ int main (int argc, char* argv[])
 	links = listingsPage.getLinks(config["craigslist_links"]);
 	int numLinks = links.size();
 	
+	if(verbose)
+		cerr << "Content length: " << listingsPage.contentLength() << endl;
 	
 	if(verbose)
 		cerr << "Retrieved " << numLinks << " links." << endl;
@@ -262,4 +199,103 @@ int main (int argc, char* argv[])
 
 	/* Shutdown libxml */
     xmlCleanupParser();
+}
+
+
+
+
+// -----------------------------------------
+void help()
+{
+	cout << "typical: (-u|--url ) #### [(-o|--outfile) ####]" << endl;
+	cout << "  where:" << endl;
+	cout << "  -u (--url) [required]" << endl;
+	cout << "      the Craigslist search page URL to be translated" << endl;
+	cout << "  -o (--outfile) is the file in which the kml will be saved" << endl;
+	cout << "     prints to stdout if no file is provided." << endl;
+	cout << "  -c (--config) use custom config values";
+	cout << "  -v (--verbose) print messages to stderr";
+}
+
+
+// -----------------------------------------
+void parse_args(int argc, char* argv[])
+{
+	for(int i = 1; i < argc; ++i)
+	{
+		if (strcmp(argv[i], "-o") == 0 || strcmp(argv[i], "--outfile") == 0)
+		{
+			if (i+1 == argc) {
+				// error messages intermingled with parsing logic
+				cerr << "Invalid " << argv[i];
+				cerr << " parameter: no outfile specified\n";
+				help();
+				exit(1);
+			}
+			outfilepath = argv[++i];  // parsing action goes here
+		}
+		else if (strcmp(argv[i], "-u") == 0 || strcmp(argv[i], "--url") == 0)
+		{
+			if (i+1 == argc) {
+				cerr << "Invalid " << argv[i];
+				cerr << " parameter: no URL specified\n";
+				help();
+				exit(1);
+			}
+			url = argv[++i];
+		}
+		else if(strcmp(argv[i], "--config") == 0 || strcmp(argv[i], "-c") == 0)
+		{
+			if (i+1 == argc) {
+				cerr << "Invalid " << argv[i];
+				cerr << " parameter: no config file specified\n";
+				help();
+				exit(1);
+			}
+			configfilename = argv[++i];
+		}
+		else if(strcmp(argv[i], "--verbose") == 0 || strcmp(argv[i], "-v") == 0)
+		{
+			verbose=true;
+		}
+		else if (strcmp(argv[i], "--version") == 0)
+		{
+			fprintf(stderr, "craig2kml version %f", VERSION);
+			exit(0);
+		} 
+	}
+}
+
+
+// -----------------------------------------
+void load_config_file(const char* filename, map<string,string>& config)
+{
+	string line, name, value;
+	ifstream configfile(filename);
+	if (configfile.is_open())
+	{
+		while(configfile.good())
+		{
+			getline(configfile, line);
+			if(!line.empty() && line[0]!='#')
+			{
+				istringstream liness( line );
+				getline( liness, name, ' ' );
+				getline( liness, value, ' ' );
+				if(config.find(name) != config.end())
+				{
+					if(verbose) cerr << "setting " << name << " to " << value << endl;
+					config[name] = value;
+				}
+				else {
+					cerr << "Unrecognized config option: " << name << endl;
+				}
+			}
+		}
+		configfile.close();
+	}
+	else 
+	{
+		cerr << "Unable to open configfile.  Using defaults." << endl; 
+	}	
 }

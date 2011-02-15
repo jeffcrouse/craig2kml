@@ -1,6 +1,6 @@
 /*
  *  Webpage.h
- *  earthify
+ *  craig2kml
  *
  *  Created by Jeffrey Crouse on 2/14/11.
  *  Copyright 2011 Eyebeam. All rights reserved.
@@ -44,7 +44,9 @@ public:
 	const char* getNodeContents(string exp);
 	const char* getNodeAttribute(string exp, string atrrib);
 
-//private:	
+	
+	int contentLength() {	return contents.length();	}
+	
 	static string userAgent;
 	
 protected:
