@@ -21,6 +21,7 @@
 const char* outfilepath=NULL;
 const char* url=NULL;
 const char* configfilename=NULL;
+const char* cachedir=NULL;
 bool verbose=false;
 int maxListings=999;
 
@@ -56,32 +57,33 @@ int main (int argc, char* argv[])
 		load_config_file(configfilename, config);
 	}
 
-	// Set the user agent for all Webpage operations
+	// Set the user agent and cache directory for all Webpage operations
 	Webpage::userAgent = config["user_agent"];
-	
+	if(cachedir!=NULL) Webpage::cacheDirectory = cachedir;
 	
 	if(verbose) 
 		cerr << "opening " << truncate(url) << endl;
 	
-	// Get the links from the main listings page.
-	Webpage* listingsPage;
-	map<string,string> links;
-	try {
-		// Create the main page with all of the listings
-		listingsPage = new Webpage(url, false, false, verbose);
-		links = listingsPage->getLinks(config["craigslist_links"]);
-		if(verbose)
-			cerr << "Retrieved " << links.size() << " links" << endl;
-		
-	} catch(string s) {
-		if(verbose) 
-			cerr << "ERROR:  " << s << endl;
+	
+	// Open the main page
+	Webpage listingsPage;
+	bool opened = listingsPage.open(url, false, false);
+	if(!opened) 
+	{
+		cerr << "couldn't open main listing page!" << endl;
 		return -1;
 	}
 	
 	
+	// Get the links from the main listings page.
+	map<string,string> links;
+	links = listingsPage.getLinks(config["craigslist_links"]);
+	if(verbose)
+		cerr << "Retrieved " << links.size() << " links" << endl;
+	
+
 	// Create the document we will be outputting
-	Craig2KML c2k(listingsPage->getNodeContents("//title"), verbose);
+	Craig2KML c2k(listingsPage.getNodeContents("//title"), verbose);
 	
 		
 	// Loop through all of the links on the page.
@@ -96,8 +98,10 @@ int main (int argc, char* argv[])
 			cerr << "Parsing " << i++ << " out of " << links.size() << ": " << title << endl;
 
 		bool mappable=true;
-		try {
-			Webpage listing(url, false, true, verbose);
+
+		Webpage listing;		
+		if(listing.open(url, false, true))
+		{
 			string addr = listing.getNodeAttribute(config["craigslist_google_maps_link"], "href");
 			addr.erase(0, config["craigslist_google_maps_link_prefix"].length());
 			
@@ -106,36 +110,41 @@ int main (int argc, char* argv[])
 			if(!addr.empty())
 			{
 				string geocodeURL = config["google_geocode_base"] + addr;
-				if(verbose) cerr << "calling " << geocodeURL << endl;
-				Webpage geocode(geocodeURL, true, true, verbose);
-				const char* status = geocode.getNodeContents(config["google_geocode_status"]);
-				if(strcmp(status, "OK")==0)
+				if(verbose) 
+					cerr << "calling " << geocodeURL << endl;
+				
+				Webpage geocode;
+				if(geocode.open(geocodeURL, true, true))
 				{
-					float lat = atof(geocode.getNodeContents(config["google_geocode_lat"]));
-					float lng = atof(geocode.getNodeContents(config["google_geocode_lng"]));
-					
-					if(verbose) 
-						cerr << "Adding placemark at " << lat << ", " << lng << endl;
+					const char* status = geocode.getNodeContents(config["google_geocode_status"]);
+					if(strcmp(status, "OK")==0)
+					{
+						float lat = atof(geocode.getNodeContents(config["google_geocode_lat"]));
+						float lng = atof(geocode.getNodeContents(config["google_geocode_lng"]));
+						
+						if(verbose) 
+							cerr << "Adding placemark at " << lat << ", " << lng << endl;
 
-					c2k.addMappable(title, description, lat, lng);
-				}
-				else {
-					if(verbose) cerr << "Geocode failed. Unmappable." << endl;
+						c2k.addMappable(title, description, lat, lng);
+					}
+					else {
+						if(verbose) cerr << "Geocode failed. Unmappable." << endl;
+						mappable=false;
+					}
+				} else {
+					if(verbose) cerr << "Can't reach geocoding service. Unmappable." << endl;
 					mappable=false;
 				}
-			}
-			else {
+			} else {
 				if(verbose) cerr << "No address found. Unmappable." << endl;
 				mappable=false;
 			}
-			
-		} catch(exception& e) {
-			if(verbose) cerr << "ERROR:  " << e.what() << endl;
+		} else {
+			if(verbose) cerr << "Couldn't open page. Unmappable." << endl;
 			mappable=false;
 		}
-		
-		if(!mappable)
-		{
+
+		if(!mappable) {
 			c2k.addUnmappable(title, description);
 		}
 	}
@@ -150,7 +159,6 @@ int main (int argc, char* argv[])
 	// Send the serialized file to whatever output we have set.
 	outFile << c2k.serialize();
 	
-	
 	// Shutdown libxml
     xmlCleanupParser();
 }
@@ -164,6 +172,7 @@ void help()
 	cout << "typical: (-u|--url ) #### [(-o|--outfile) ####]" << endl;
 	cout << "  where:" << endl;
 	cout << "  -c (--config) use custom config values";
+	cout << "  -d (--cachedir) the directory in which to load and save cache files";
 	cout << "  -m (--max) maximum number of listings to include";
 	cout << "  -o (--outfile) is the file in which the kml will be saved" << endl;
 	cout << "     prints to stdout if no file is provided." << endl;
@@ -198,6 +207,16 @@ void parse_args(int argc, char* argv[])
 				exit(1);
 			}
 			url = argv[++i];
+		}
+		else if (strcmp(argv[i], "-d") == 0 || strcmp(argv[i], "--cachedir") == 0)
+		{
+			if (i+1 == argc) {
+				cerr << "Invalid " << argv[i];
+				cerr << " parameter: no directory specified\n";
+				help();
+				exit(1);
+			}
+			cachedir = argv[++i];
 		}
 		else if(strcmp(argv[i], "--config") == 0 || strcmp(argv[i], "-c") == 0)
 		{

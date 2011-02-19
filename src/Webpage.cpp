@@ -11,15 +11,15 @@
 
 // -------------------------------------------------------------
 string Webpage::userAgent = "Mozilla/5.0";
-string Webpage::cacheDirectory = ".c2kcache";
+string Webpage::cacheDirectory = "";
 bool Webpage::libxmlInited = false;
 
 
+
 // -------------------------------------------------------------
-Webpage::Webpage(string url, bool wellFormed, bool useCache, bool _verbose)
+Webpage::Webpage()
 {
-	verbose = _verbose;
-	
+	verbose = true;
 	if(!Webpage::libxmlInited)
 	{
 		if(verbose)
@@ -27,16 +27,114 @@ Webpage::Webpage(string url, bool wellFormed, bool useCache, bool _verbose)
 		xmlInitParser();
 		Webpage::libxmlInited = true;
 	}
+}
+
+
+// -------------------------------------------------------------
+Webpage::~Webpage()
+{
+	xmlFreeDoc(doc);
+	//xmlXPathFreeContext(xpathCtx); 
+}
+
+
+// -------------------------------------------------------------
+void Webpage::setVerbose(bool _verbose)
+{
+	verbose = _verbose;
+}
+
+
+// -------------------------------------------------------------
+bool Webpage::open(string url, bool wellFormed, bool useCache)
+{	
+	if(Webpage::cacheDirectory.empty())
+	{
+		useCache=false;
+	}
 	
-	locale loc;
-	const collate<char>& coll = use_facet<collate<char> >(loc);
-	long myhash = coll.hash(url.data(),url.data()+url.length());
-	char cachefile[255];
-	sprintf(cachefile, "%s/%ld.cache", Webpage::cacheDirectory.c_str(), myhash);
+	bool loaded=false;
+	if(useCache)
+	{
+		locale loc;
+		const collate<char>& coll = use_facet<collate<char> >(loc);
+		long myhash = coll.hash(url.data(),url.data()+url.length());
+		sprintf(cachefile, "%s/%ld.cache", Webpage::cacheDirectory.c_str(), myhash);
+		
+		loaded = loadFromCache();
+	}
 	
+	if(!loaded)
+	{
+		contents = download(url, verbose);
+		if(useCache)
+		{
+			saveToCache();
+		}
+	}
+	
+	if(!wellFormed)
+	{
+		tidy_me();
+	}
+	
+	// get rid of doctype line.  It messes up the parser
+	string prefix = "<!DOCTYPE";
+	if(contents.compare(0, prefix.size(), prefix)==0)
+	{
+		size_t pos = contents.find(">");
+		contents.erase(0, pos+1);
+	}
+	
+	if(verbose)
+		cerr << "Parsing document. Length: " << contents.length() << endl;
+	
+	doc = xmlParseMemory(contents.c_str(), contents.length());
+	if (doc == NULL) {
+		if(verbose)
+			cerr << "Error: unable to parse HTML" << endl;
+		return false;
+	}
+	
+	xpathCtx = xmlXPathNewContext(doc);
+	if(xpathCtx == NULL) {
+		xmlFreeDoc(doc);
+		if(verbose)
+			cerr << "Error: unable to create new XPath context" << endl;
+		return false;
+	}
+	
+	return true;
+}
+
+
+// -------------------------------------------------------------
+bool Webpage::saveToCache()
+{
+	ofstream myfile;
+	myfile.open(cachefile, ios::out);
+	if(myfile.is_open())
+	{
+		if(verbose) 
+			cerr << "Writing cachefile: " << cachefile << endl;
+		myfile << contents;
+		myfile.close();
+		return true;
+	}
+	else
+	{
+		if(verbose) 
+			cerr << "ERROR:  Couldn't write to " << cachefile << endl;
+		return false;
+	}
+}
+	
+// -------------------------------------------------------------
+bool Webpage::loadFromCache()
+{
 	string line;
 	ifstream myfile(cachefile);
-	if(useCache && myfile.is_open())
+	if(myfile.is_open())
 	{
 		if(verbose) 
 			cerr << "loading from cache: " << cachefile << endl;
@@ -47,113 +145,69 @@ Webpage::Webpage(string url, bool wellFormed, bool useCache, bool _verbose)
 			contents += line+"\n";
 		}
 		myfile.close();
-	}
-	else 
-	{
-		if(verbose) 
-			cerr << "downloading..." << endl;
-		
-		static char errorBuffer[CURL_ERROR_SIZE];
-		CURL *curl = curl_easy_init();
-		CURLcode result;
-		if (!curl) {
-			throw "Couldn't create CURL object.";
-		}
-		
-		// Set the headers
-		struct curl_slist *headers=NULL;
-		char user_agent_header[255];
-		sprintf(user_agent_header, "User-Agent: %s", Webpage::userAgent.c_str());
-		headers = curl_slist_append(headers, user_agent_header);
-		
-
-		// TO DO:
-		// Set timeout limit
-		// put the whoel thing in a try block
-		curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, errorBuffer);
-		curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-		curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
-		curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1);
-		curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writeData);
-		curl_easy_setopt(curl, CURLOPT_WRITEDATA, &contents);
-		result = curl_easy_perform(curl);
-		curl_easy_cleanup(curl);
-		curl_slist_free_all(headers);
-		
-
-		// Did we succeed?
-		if (result != CURLE_OK)
-		{
-			throw std::runtime_error(errorBuffer);						
-		}
-		
-		long http_code = 0;
-		curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
-		char status_msg[255];
-		sprintf(status_msg, "HTTP status code: %ld", http_code);
-		if(verbose) cerr << status_msg << endl;
-		if (http_code != 200 || result == CURLE_ABORTED_BY_CALLBACK)
-		{
-			throw std::runtime_error("HTTP error");	
-		}
-		
-		
-		if(!wellFormed)
-		{
-			tidy_me();
-		}
-		
-		
-		ofstream myfile;
-		myfile.open(cachefile, ios::out);
-		if(myfile.is_open())
-		{
-			if(verbose) 
-				cerr << "Writing cachefile: " << cachefile << endl;
-			myfile << contents;
-			myfile.close();
-		}
-		else
-		{
-			if(verbose) 
-				cerr << "ERROR:  Couldn't write to " << cachefile << endl;
-		}
-	}
-	
-	// get rid of doctype line.  It messes up the parser
-	string prefix = "<!DOCTYPE";
-	if(contents.compare(0, prefix.size(), prefix)==0)
-	{
-		size_t pos = contents.find(">");
-		contents.erase(0, pos+1);
-	}
-
-	if(verbose)
-		cerr << "Parsing document. Length: " << contents.length() << endl;
-	
-	doc = xmlParseMemory(contents.c_str(), contents.length());
-	if (doc == NULL) {
-		if(verbose)
-			cerr << "Error: unable to parse HTML" << endl;
-		throw "Error: unable to parse HTML";
-	}
-	
-	xpathCtx = xmlXPathNewContext(doc);
-	if(xpathCtx == NULL) {
-		xmlFreeDoc(doc);
-		if(verbose)
-			cerr << "Error: unable to create new XPath context" << endl;
-		throw "Error: unable to create new XPath context";
+		return true;
+	} else {
+		return false;
 	}
 }
 
 
 // -------------------------------------------------------------
-Webpage::~Webpage()
+string Webpage::download(string url, bool verbose)
 {
-	xmlFreeDoc(doc);
-	xmlXPathFreeContext(xpathCtx); 
+	string str;
+	
+	if(verbose) 
+		cerr << "downloading..." << endl;
+	
+	static char errorBuffer[CURL_ERROR_SIZE];
+	CURL *curl = curl_easy_init();
+	CURLcode result;
+	if (!curl) {
+		throw "Couldn't create CURL object.";
+	}
+	
+	// Set the headers
+	struct curl_slist *headers=NULL;
+	char user_agent_header[255];
+	sprintf(user_agent_header, "User-Agent: %s", Webpage::userAgent.c_str());
+	headers = curl_slist_append(headers, user_agent_header);
+	
+	
+	// TO DO:
+	// Set timeout limit
+	// put the whoel thing in a try block
+	curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, errorBuffer);
+	curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+	curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+	curl_easy_setopt(curl, CURLOPT_TIMEOUT_MS, 2000);
+	curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1);
+	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writeData);
+	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &str);
+	result = curl_easy_perform(curl);
+	curl_easy_cleanup(curl);
+	curl_slist_free_all(headers);
+	
+	
+	// Did we succeed?
+	if (result != CURLE_OK)
+	{
+		throw std::runtime_error(errorBuffer);						
+	}
+	
+	long http_code = 0;
+	curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
+	char status_msg[255];
+	sprintf(status_msg, "HTTP status code: %ld", http_code);
+	if(verbose) cerr << status_msg << endl;
+	if (http_code != 200 || result == CURLE_ABORTED_BY_CALLBACK)
+	{
+		throw std::runtime_error("HTTP error");	
+	}
+	
+	return str;
 }
+
 
 // -------------------------------------------------------------
 void Webpage::tidy_me()
@@ -263,7 +317,7 @@ const char* Webpage::getNodeAsString(string exp)
 // -------------------------------------------------------------
 const char* Webpage::getNodeAttribute(string exp, string attrib)
 {
-	const xmlChar* contents;
+	const xmlChar* contents=(const xmlChar*)"";
 	xmlXPathObjectPtr obj = xpath(exp);
 	xmlNodeSetPtr nodeset = obj->nodesetval;
 	
@@ -292,47 +346,6 @@ const char* Webpage::getNodeContents(string exp)
 	return (const char*)contents;
 }
 
-/*
-// -------------------------------------------------------------
-// Gets the latitude and longitude out of a Google geocoding result 
-// Replaced by other methods
-float* Webpage::getGoogleLatLng()
-{
-	xmlXPathObjectPtr obj = xpath("/GeocodeResponse/status");
-	const char* status = (const char*)xmlNodeListGetString(doc, obj->nodesetval->nodeTab[0]->children, 1);
-	
-	if(strcmp(status, "OK")!=0) {
-		return NULL;
-	}
-	
-	float* latlng = new float[2];
-	
-	// TO DO:  There must be a better way to get at the lat and lng values.
-	obj = xpath("/GeocodeResponse/result/geometry/location");
-	
-	xmlNodeSetPtr nodeset = obj->nodesetval;
-	xmlNode* location = nodeset->nodeTab[0];
-	
-	xmlNode* cur = location->xmlChildrenNode;
-	const xmlChar* lat;
-	const xmlChar* lng;
-	while (cur != NULL) {
-		if ((!xmlStrcmp(cur->name, (const xmlChar *)"lat"))){
-			lat = xmlNodeListGetString(doc, cur->xmlChildrenNode, 1);
-		}
-		if ((!xmlStrcmp(cur->name, (const xmlChar *)"lng"))){
-			lng = xmlNodeListGetString(doc, cur->xmlChildrenNode, 1);
-		}
-		cur = cur->next;
-	}
-	
-	latlng[0] = atof((const char*)lat);
-	latlng[1] = atof((const char*)lng);
-	
-	xmlXPathFreeObject(obj);
-	return latlng;
-}
-*/
 // -------------------------------------------------------------
 int Webpage::writeData(char *data, size_t size, size_t nmemb, std::string *buffer)
 {
