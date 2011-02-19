@@ -29,7 +29,7 @@ ifeq ($(config),debug)
   CFLAGS    += $(CPPFLAGS) $(ARCH) -g
   CXXFLAGS  += $(CFLAGS) 
   LDFLAGS   += -L/opt/local/lib -L/usr/local/lib -L/usr/lib
-  LIBS      += -lxml2 -ltidy -lcurl -lkmlbase -lkmlconvenience -lkmldom -lkmlengine
+  LIBS      += -lxml2 -ltidy -lcurl -lz -lpthread -liconv -lm -lkmlbase -lkmlconvenience -lkmldom -lkmlengine
   RESFLAGS  += $(DEFINES) $(INCLUDES) 
   LDDEPS    += 
   LINKCMD    = $(CXX) -o $(TARGET) $(OBJECTS) $(LDFLAGS) $(RESOURCES) $(ARCH) $(LIBS)
@@ -51,7 +51,7 @@ ifeq ($(config),release)
   CFLAGS    += $(CPPFLAGS) $(ARCH) -O2
   CXXFLAGS  += $(CFLAGS) 
   LDFLAGS   += -Wl,-x -L/opt/local/lib -L/usr/local/lib -L/usr/lib
-  LIBS      += -lxml2 -ltidy -lcurl -lkmlbase -lkmlconvenience -lkmldom -lkmlengine
+  LIBS      += -lxml2 -ltidy -lcurl -lz -lpthread -liconv -lm -lkmlbase -lkmlconvenience -lkmldom -lkmlengine
   RESFLAGS  += $(DEFINES) $(INCLUDES) 
   LDDEPS    += 
   LINKCMD    = $(CXX) -o $(TARGET) $(OBJECTS) $(LDFLAGS) $(RESOURCES) $(ARCH) $(LIBS)
@@ -64,7 +64,10 @@ ifeq ($(config),release)
 endif
 
 OBJECTS := \
+	$(OBJDIR)/Craig2KML.o \
+	$(OBJDIR)/Listing.o \
 	$(OBJDIR)/main.o \
+	$(OBJDIR)/SearchResult.o \
 	$(OBJDIR)/Webpage.o \
 
 RESOURCES := \
@@ -126,7 +129,16 @@ $(GCH): $(PCH)
 	$(SILENT) $(CXX) $(CXXFLAGS) -o "$@" -c "$<"
 endif
 
+$(OBJDIR)/Craig2KML.o: src/Craig2KML.cpp
+	@echo $(notdir $<)
+	$(SILENT) $(CXX) $(CXXFLAGS) -o "$@" -c "$<"
+$(OBJDIR)/Listing.o: src/Listing.cpp
+	@echo $(notdir $<)
+	$(SILENT) $(CXX) $(CXXFLAGS) -o "$@" -c "$<"
 $(OBJDIR)/main.o: src/main.cpp
+	@echo $(notdir $<)
+	$(SILENT) $(CXX) $(CXXFLAGS) -o "$@" -c "$<"
+$(OBJDIR)/SearchResult.o: src/SearchResult.cpp
 	@echo $(notdir $<)
 	$(SILENT) $(CXX) $(CXXFLAGS) -o "$@" -c "$<"
 $(OBJDIR)/Webpage.o: src/Webpage.cpp

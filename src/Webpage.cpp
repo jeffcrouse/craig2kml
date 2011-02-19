@@ -12,10 +12,22 @@
 // -------------------------------------------------------------
 string Webpage::userAgent = "Mozilla/5.0";
 string Webpage::cacheDirectory = ".c2kcache";
+bool Webpage::libxmlInited = false;
+
 
 // -------------------------------------------------------------
-Webpage::Webpage(string url, bool wellFormed, bool verbose)
+Webpage::Webpage(string url, bool wellFormed, bool useCache, bool _verbose)
 {
+	verbose = _verbose;
+	
+	if(!Webpage::libxmlInited)
+	{
+		if(verbose)
+			cerr << "Initializing libxml." << endl;
+		xmlInitParser();
+		Webpage::libxmlInited = true;
+	}
+	
 	locale loc;
 	const collate<char>& coll = use_facet<collate<char> >(loc);
 	long myhash = coll.hash(url.data(),url.data()+url.length());
@@ -24,9 +36,11 @@ Webpage::Webpage(string url, bool wellFormed, bool verbose)
 	
 	string line;
 	ifstream myfile(cachefile);
-	if (myfile.is_open())
+	if(useCache && myfile.is_open())
 	{
-		if(verbose) cerr << "loading from cache: " << cachefile << endl;
+		if(verbose) 
+			cerr << "loading from cache: " << cachefile << endl;
+		
 		while ( myfile.good() )
 		{
 			getline(myfile,line);
@@ -36,7 +50,8 @@ Webpage::Webpage(string url, bool wellFormed, bool verbose)
 	}
 	else 
 	{
-		if(verbose) cerr << "downloading..." << endl;
+		if(verbose) 
+			cerr << "downloading..." << endl;
 		
 		static char errorBuffer[CURL_ERROR_SIZE];
 		CURL *curl = curl_easy_init();
@@ -65,6 +80,7 @@ Webpage::Webpage(string url, bool wellFormed, bool verbose)
 		curl_easy_cleanup(curl);
 		curl_slist_free_all(headers);
 		
+
 		// Did we succeed?
 		if (result != CURLE_OK)
 		{
@@ -81,26 +97,29 @@ Webpage::Webpage(string url, bool wellFormed, bool verbose)
 			throw std::runtime_error("HTTP error");	
 		}
 		
+		
 		if(!wellFormed)
 		{
 			tidy_me();
 		}
 		
+		
 		ofstream myfile;
 		myfile.open(cachefile, ios::out);
 		if(myfile.is_open())
 		{
-			if(verbose) cerr << "Writing cachefile: " << cachefile << endl;
+			if(verbose) 
+				cerr << "Writing cachefile: " << cachefile << endl;
 			myfile << contents;
 			myfile.close();
 		}
 		else
 		{
-			if(verbose) cerr << "ERROR:  Couldn't write to " << cachefile << endl;
+			if(verbose) 
+				cerr << "ERROR:  Couldn't write to " << cachefile << endl;
 		}
 	}
 	
-
 	// get rid of doctype line.  It messes up the parser
 	string prefix = "<!DOCTYPE";
 	if(contents.compare(0, prefix.size(), prefix)==0)
@@ -109,14 +128,22 @@ Webpage::Webpage(string url, bool wellFormed, bool verbose)
 		contents.erase(0, pos+1);
 	}
 
+	if(verbose)
+		cerr << "Parsing document. Length: " << contents.length() << endl;
+	
 	doc = xmlParseMemory(contents.c_str(), contents.length());
 	if (doc == NULL) {
+		if(verbose)
+			cerr << "Error: unable to parse HTML" << endl;
 		throw "Error: unable to parse HTML";
 	}
 	
 	xpathCtx = xmlXPathNewContext(doc);
 	if(xpathCtx == NULL) {
-		throw std::runtime_error("Error: unable to create new XPath context");
+		xmlFreeDoc(doc);
+		if(verbose)
+			cerr << "Error: unable to create new XPath context" << endl;
+		throw "Error: unable to create new XPath context";
 	}
 }
 
@@ -144,13 +171,35 @@ void Webpage::tidy_me()
 		//tidyOptSetValue(_tdoc, tidyOptGetIdForName("newline"), "\n");
 		tidyOptSetInt(_tdoc, tidyOptGetIdForName("wrap"), 5000);
 		tidyParseString( _tdoc, contents.c_str() );
-		
+	
+		/*
+		// tidySaveBuffer doesn't seem to work with the makefile for some reason.
 		TidyBuffer output = {0};
 		tidySaveBuffer(_tdoc, &output);
+		cout << "3. TidyBuffer size: " << output.size << endl;
 		contents = string((char*)output.bp, (size_t)output.size);
+		 */
+		
+		// tidySaveString is a tricky beast.
+		tmbstr buffer = NULL;
+		uint buflen = 0;
+		int status;
+		//status = tidySaveStdout( tdoc );
+		do {
+			status = tidySaveString( _tdoc, buffer, &buflen );
+			//printf("tidySaveString status, buflen = %d, %d\n", status, buflen);
+			if (status == -ENOMEM) {
+				//printf("Need to allocate buffer of at least %d bytes in size\n", buflen);
+				if(buffer) 
+					free(buffer);
+				buffer = (tmbstr)malloc(buflen + 1);
+			}
+		} while (status == -ENOMEM);
+		contents = (char*)buffer;
+
 	} catch (exception& e) {
 		throw e.what();
-	}		
+	}
 }
 
 // -------------------------------------------------------------
@@ -171,11 +220,10 @@ xmlXPathObjectPtr Webpage::xpath(string exp)
 map<string,string> Webpage::getLinks(string exp)
 {
 	map<string,string> links;
-
 	xmlXPathObjectPtr obj = xpath(exp);
 	xmlNodeSetPtr nodeset = obj->nodesetval;
-	
-	for (int i=0; i < nodeset->nodeNr; i++)
+
+	for (int i=0; i<nodeset->nodeNr; i++)
 	{
 		xmlChar *href, *title;
 		href = xmlGetProp(nodeset->nodeTab[i], (const xmlChar *)"href");

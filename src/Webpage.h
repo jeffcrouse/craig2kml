@@ -32,7 +32,7 @@ using namespace std;
 class Webpage {
 public:
 	
-	Webpage(string url, bool wellFormed=false, bool verbose=true);
+	Webpage(string url, bool wellFormed=false, bool useCache=true, bool verbose=true);
 	~Webpage();
 
 	// Run TidyLib on 'contents'
@@ -55,8 +55,12 @@ public:
 	
 	static string userAgent;
 	static string cacheDirectory;
+	
 protected:
 	
+	static bool libxmlInited;
+	
+	bool verbose;
 	xmlXPathObjectPtr xpath(string exp);
 	static int writeData(char *data, size_t size, size_t nmemb, std::string *buffer);
 

@@ -17,7 +17,7 @@
 #include "Craig2KML.h"
 
 
-// Some global vars.
+// All of these vars are set with command line options
 const char* outfilepath=NULL;
 const char* url=NULL;
 const char* configfilename=NULL;
@@ -31,7 +31,7 @@ void load_config_file(const char* filename, map<string,string>& config);
 void parse_args(int argc, char* argv[]);
 void help();
 map<string,string> default_config();
-
+string truncate(string str, int n=60);
 
 // -----------------------------------------
 int main (int argc, char* argv[])
@@ -60,32 +60,32 @@ int main (int argc, char* argv[])
 	Webpage::userAgent = config["user_agent"];
 	
 	
-	// Set up libXML
-	// TO DO:  Can we move this to the Webpage class such that it only runs once? static bool?
-	xmlInitParser();
-	
-	
 	if(verbose) 
-		cerr << "opening " << url << endl;
+		cerr << "opening " << truncate(url) << endl;
 	
-	
-	// Create the main page with all of the listings
-	Webpage listingsPage( url );
-	if(verbose)
-		cerr << "Content length: " << listingsPage.contentLength() << endl;
+	// Get the links from the main listings page.
+	Webpage* listingsPage;
+	map<string,string> links;
+	try {
+		// Create the main page with all of the listings
+		listingsPage = new Webpage(url, false, false, verbose);
+		if(verbose)
+			cerr << "Content length: " << listingsPage->contentLength() << endl;
 
-	
-	// first = title
-	// second = link
-	map<string,string> links = listingsPage.getLinks(config["craigslist_links"]);
-	if(verbose)
-		cerr << "Retrieved " << links.size() << " links." << endl;
+		links = listingsPage->getLinks(config["craigslist_links"]);
+		if(verbose)
+			cerr << "Retrieved " << links.size() << " links" << endl;
+		
+	} catch(string s) {
+		if(verbose) 
+			cerr << "ERROR:  " << s << endl;
+		return -1;
+	}
 	
 	
 	
 	// Create the document we will be outputting
-	Craig2KML c2k(listingsPage.getNodeContents("//title"), verbose);
-	
+	Craig2KML c2k(listingsPage->getNodeContents("//title"), verbose);
 	
 		
 	// Loop through all of the links on the page.
@@ -94,15 +94,14 @@ int main (int argc, char* argv[])
 	{
 		// TO DO:  Both of these varnames already exist in a higher scope!
 		string title = it->first;
-		string description;
 		string url = it->second;
+		string description;
 		if(verbose) 
-			cerr << "Parsing " << i << " out of " << links.size() << ": " << title << endl;
-		i++;
-		
+			cerr << "Parsing " << i++ << " out of " << links.size() << ": " << title << endl;
+
 		bool mappable=true;
 		try {
-			Webpage listing(url);
+			Webpage listing(url, false, true, verbose);
 			string addr = listing.getNodeAttribute(config["craigslist_google_maps_link"], "href");
 			addr.erase(0, config["craigslist_google_maps_link_prefix"].length());
 			
@@ -112,7 +111,7 @@ int main (int argc, char* argv[])
 			{
 				string geocodeURL = config["google_geocode_base"] + addr;
 				if(verbose) cerr << "calling " << geocodeURL << endl;
-				Webpage geocode(geocodeURL, true);
+				Webpage geocode(geocodeURL, true, true, verbose);
 				const char* status = geocode.getNodeContents(config["google_geocode_status"]);
 				if(strcmp(status, "OK")==0)
 				{
@@ -236,7 +235,21 @@ void parse_args(int argc, char* argv[])
 	}
 }
 
+// -----------------------------------------
+string truncate(string str, int n)
+{
+	if(str.length()>n)
+	{
+		string shortened(str);
+		shortened.erase(n);
+		return shortened+"...";
+	}
+	else
+	{
+		return str;
+	}
 
+}
 
 // -----------------------------------------
 map<string,string> default_config()

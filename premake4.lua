@@ -7,7 +7,7 @@ project "craig2kml"
 	language "C++"
 	files { "src/*.h", "src/*.cpp" }
 	links { 
-		"xml2", "tidy", "curl",
+		"xml2", "tidy", "curl", "z", "pthread", "iconv", "m",
 		"kmlbase", "kmlconvenience", "kmldom", "kmlengine" }
 	libdirs { 
 		"/opt/local/lib", 
@@ -18,7 +18,7 @@ project "craig2kml"
 		os.findlib("curl")   }
 	includedirs { 
 		"/opt/local/include",
-		"/opt/local/include/libxml2", 
+		"/opt/local/include/libxml2",
 		"/usr/local/include/tidy",
 		"/usr/local/include/kml/**" }
 	
