@@ -11,70 +11,96 @@
 
 // -------------------------------------------------------------
 string Webpage::userAgent = "Mozilla/5.0";
-
+string Webpage::cacheDirectory = ".c2kcache";
 
 // -------------------------------------------------------------
-Webpage::Webpage(string url, bool wellFormed)
+Webpage::Webpage(string url, bool wellFormed, bool verbose)
 {
-	static char errorBuffer[CURL_ERROR_SIZE];
-	CURL *curl = curl_easy_init();
-	CURLcode result;
-	if (!curl) {
-		throw "Couldn't create CURL object.";
-	}
+	locale loc;
+	const collate<char>& coll = use_facet<collate<char> >(loc);
+	long myhash = coll.hash(url.data(),url.data()+url.length());
+	char cachefile[255];
+	sprintf(cachefile, "%s/%ld.cache", Webpage::cacheDirectory.c_str(), myhash);
 	
-	// Set the headers
-	struct curl_slist *headers=NULL;
-	char user_agent_header[255];
-	sprintf(user_agent_header, "User-Agent: %s", Webpage::userAgent.c_str());
-	headers = curl_slist_append(headers, user_agent_header);
-	
-	// TO DO:
-	// Set timeout limit
-	// put the whoel thing in a try block
-	curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, errorBuffer);
-	curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-	curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
-	curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1);
-	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writeData);
-	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &contents);
-	result = curl_easy_perform(curl);
-	curl_easy_cleanup(curl);
-	curl_slist_free_all(headers);
-	
-	
-	// Did we succeed?
-	if (result != CURLE_OK)
+	string line;
+	ifstream myfile(cachefile);
+	if (myfile.is_open())
 	{
-		throw std::runtime_error(errorBuffer);						
+		if(verbose) cerr << "loading from cache: " << cachefile << endl;
+		while ( myfile.good() )
+		{
+			getline(myfile,line);
+			contents += line+"\n";
+		}
+		myfile.close();
 	}
+	else 
+	{
+		if(verbose) cerr << "downloading..." << endl;
+		
+		static char errorBuffer[CURL_ERROR_SIZE];
+		CURL *curl = curl_easy_init();
+		CURLcode result;
+		if (!curl) {
+			throw "Couldn't create CURL object.";
+		}
+		
+		// Set the headers
+		struct curl_slist *headers=NULL;
+		char user_agent_header[255];
+		sprintf(user_agent_header, "User-Agent: %s", Webpage::userAgent.c_str());
+		headers = curl_slist_append(headers, user_agent_header);
+		
 
-	//cout << "\n\n\n\n-------------------------\n\n\n\n\n"  << contents << endl;
-	
-	if(!wellFormed)
-	{
-		try {
-			TidyDoc _tdoc = tidyCreate();
-			//tidyOptSetBool(_tdoc, tidyOptGetIdForName("show-body-only"), (Bool)1);
-			tidyOptSetBool(_tdoc, tidyOptGetIdForName("output-xhtml"), (Bool)1);
-			tidyOptSetBool(_tdoc, tidyOptGetIdForName("quote-nbsp"), (Bool)0);
-			tidyOptSetBool(_tdoc, tidyOptGetIdForName("show-warnings"), (Bool)0);
-			tidyOptSetValue(_tdoc, tidyOptGetIdForName("char-encoding"), "utf8");
-			//tidyOptSetBool(_tdoc, tidyOptGetIdForName("ascii-chars"), (Bool)1);
-			//tidyOptSetBool(_tdoc, tidyOptGetIdForName("markup"), (Bool)1);
-			//tidyOptSetValue(_tdoc, tidyOptGetIdForName("indent"), "yes");
-			//tidyOptSetValue(_tdoc, tidyOptGetIdForName("newline"), "\n");
-			tidyOptSetInt(_tdoc, tidyOptGetIdForName("wrap"), 400);
-			tidyParseString( _tdoc, contents.c_str() );
-			
-			TidyBuffer output = {0};
-			tidySaveBuffer(_tdoc, &output);
-			contents = string((char*)output.bp, (size_t)output.size);
-		} catch (exception& e) {
-			throw e.what();
-		}	
+		// TO DO:
+		// Set timeout limit
+		// put the whoel thing in a try block
+		curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, errorBuffer);
+		curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+		curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+		curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1);
+		curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writeData);
+		curl_easy_setopt(curl, CURLOPT_WRITEDATA, &contents);
+		result = curl_easy_perform(curl);
+		curl_easy_cleanup(curl);
+		curl_slist_free_all(headers);
+		
+		// Did we succeed?
+		if (result != CURLE_OK)
+		{
+			throw std::runtime_error(errorBuffer);						
+		}
+		
+		long http_code = 0;
+		curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
+		char status_msg[255];
+		sprintf(status_msg, "HTTP status code: %ld", http_code);
+		if(verbose) cerr << status_msg << endl;
+		if (http_code != 200 || result == CURLE_ABORTED_BY_CALLBACK)
+		{
+			throw std::runtime_error("HTTP error");	
+		}
+		
+		if(!wellFormed)
+		{
+			tidy_me();
+		}
+		
+		ofstream myfile;
+		myfile.open(cachefile, ios::out);
+		if(myfile.is_open())
+		{
+			if(verbose) cerr << "Writing cachefile: " << cachefile << endl;
+			myfile << contents;
+			myfile.close();
+		}
+		else
+		{
+			if(verbose) cerr << "ERROR:  Couldn't write to " << cachefile << endl;
+		}
 	}
 	
+
 	// get rid of doctype line.  It messes up the parser
 	string prefix = "<!DOCTYPE";
 	if(contents.compare(0, prefix.size(), prefix)==0)
@@ -102,6 +128,30 @@ Webpage::~Webpage()
 	xmlXPathFreeContext(xpathCtx); 
 }
 
+// -------------------------------------------------------------
+void Webpage::tidy_me()
+{
+	try {
+		TidyDoc _tdoc = tidyCreate();
+		//tidyOptSetBool(_tdoc, tidyOptGetIdForName("show-body-only"), (Bool)1);
+		tidyOptSetBool(_tdoc, tidyOptGetIdForName("output-xhtml"), (Bool)1);
+		tidyOptSetBool(_tdoc, tidyOptGetIdForName("quote-nbsp"), (Bool)0);
+		tidyOptSetBool(_tdoc, tidyOptGetIdForName("show-warnings"), (Bool)0);
+		tidyOptSetValue(_tdoc, tidyOptGetIdForName("char-encoding"), "utf8");
+		//tidyOptSetBool(_tdoc, tidyOptGetIdForName("ascii-chars"), (Bool)1);
+		//tidyOptSetBool(_tdoc, tidyOptGetIdForName("markup"), (Bool)1);
+		//tidyOptSetValue(_tdoc, tidyOptGetIdForName("indent"), "yes");
+		//tidyOptSetValue(_tdoc, tidyOptGetIdForName("newline"), "\n");
+		tidyOptSetInt(_tdoc, tidyOptGetIdForName("wrap"), 5000);
+		tidyParseString( _tdoc, contents.c_str() );
+		
+		TidyBuffer output = {0};
+		tidySaveBuffer(_tdoc, &output);
+		contents = string((char*)output.bp, (size_t)output.size);
+	} catch (exception& e) {
+		throw e.what();
+	}		
+}
 
 // -------------------------------------------------------------
 xmlXPathObjectPtr Webpage::xpath(string exp)

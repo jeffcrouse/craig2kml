@@ -11,18 +11,11 @@
 
 #include <iostream>
 #include <fstream>
-#include <kml/dom.h>
-#include <kml/engine.h>
 #include "Webpage.h"
+#include "SearchResult.h"
+#include "Listing.h"
+#include "Craig2KML.h"
 
-using namespace std;
-using kmldom::CoordinatesPtr;
-using kmldom::KmlPtr;
-using kmldom::KmlFactory;
-using kmldom::PlacemarkPtr;
-using kmldom::PointPtr;
-using kmldom::FolderPtr;
-using kmlengine::Bbox;
 
 // Some global vars.
 const char* outfilepath=NULL;
@@ -31,26 +24,21 @@ const char* configfilename=NULL;
 bool verbose=false;
 int maxListings=999;
 
+
+
 // Some helper functions.
 void load_config_file(const char* filename, map<string,string>& config);
 void parse_args(int argc, char* argv[]);
 void help();
+map<string,string> default_config();
+
 
 // -----------------------------------------
 int main (int argc, char* argv[])
-{
-	// Default config options
-	map<string,string> config;
-	config["craigslist_links"]				= "/body/blockquote/p/a";
-	config["craigslist_google_maps_link"]	= "//div[@id='userbody']//small/a";
-	config["google_geocode_base"]			= "http://maps.googleapis.com/maps/api/geocode/xml?sensor=false&address=";
-	config["google_geocode_status"]			= "/GeocodeResponse/status";
-	config["google_geocode_lat"]			= "/GeocodeResponse/result/geometry/location/lat";
-	config["google_geocode_lng"]			= "/GeocodeResponse/result/geometry/location/lng";
-	config["craigslist_google_maps_link_prefix"] = "http://maps.google.com/?q=loc%3A+";
-	config["craigslist_item_description"]	= "//div[@id='userbody']";
-	config["user_agent"]					= "Mozilla/5.0";
-	
+{	
+	// Set default config options
+	map<string,string> config = default_config();
+
 	// Parse command line options.
 	parse_args(argc, argv);
 
@@ -61,16 +49,6 @@ int main (int argc, char* argv[])
 		exit(1);
 	}
 	
-	// If the user provided an output file, try to open it.
-	ofstream outfile;
-	if(outfilepath!=NULL)
-	{
-		outfile.open(outfilepath);
-		if(!outfile.is_open()) {
-			cerr << "Couldn't open " << outfilepath << " for writing." << endl;
-			return -1;
-		}	
-	}
 	
 	// Parse the config file if it exists.
 	if(configfilename!=NULL)
@@ -78,182 +56,107 @@ int main (int argc, char* argv[])
 		load_config_file(configfilename, config);
 	}
 
-	
+	// Set the user agent for all Webpage operations
 	Webpage::userAgent = config["user_agent"];
 	
 	
-	/* Set up libXML */
+	// Set up libXML
+	// TO DO:  Can we move this to the Webpage class such that it only runs once? static bool?
 	xmlInitParser();
 	
 	
+	if(verbose) 
+		cerr << "opening " << url << endl;
+	
+	
 	// Create the main page with all of the listings
-	if(verbose) cerr << "opening " << url << endl;
-	Webpage listingsPage(url);
-	
-
-	// All of the listings are within /body/blockquote/p
-	// These are the links to individual listing pages
-	// first = title
-	// second = link
-	map<string,string> links;
-	map<string,string>::iterator it;
-	links = listingsPage.getLinks(config["craigslist_links"]);
-	int numLinks = links.size();
-	
+	Webpage listingsPage( url );
 	if(verbose)
 		cerr << "Content length: " << listingsPage.contentLength() << endl;
+
 	
+	// first = title
+	// second = link
+	map<string,string> links = listingsPage.getLinks(config["craigslist_links"]);
 	if(verbose)
-		cerr << "Retrieved " << numLinks << " links." << endl;
-	
-	// Get the factory singleton to create KML elements.
-	KmlFactory* factory = KmlFactory::GetFactory();
-
-	// Create <kml>
-	KmlPtr kml = factory->CreateKml();
-	
-	// Create the root folder
-	FolderPtr root = factory->CreateFolder();
-	root->set_name("Craig2KML");
-
-	// Add it to the main KML object
-	kml->set_feature(root);  // kml takes ownership.
+		cerr << "Retrieved " << links.size() << " links." << endl;
 	
 	
-	// Create the description for the main folder
-	time_t t = time(0); //obtain the current time_t value
-	tm now=*localtime(&t); //convert it to tm
-	char tmdescr[255]={0};
-	strftime(tmdescr, sizeof(tmdescr)-1, "%A, %B %d %Y. %X", &now);
-	char desc[1024];
-	sprintf(desc, "\"%s\" %s on %s", listingsPage.getNodeContents("//title"), url, tmdescr);
-	if(verbose) cerr << desc << endl;
-	root->set_description(desc);
+	
+	// Create the document we will be outputting
+	Craig2KML c2k(listingsPage.getNodeContents("//title"), verbose);
 	
 	
-	// Make a folder for all of the mapable listings
-	FolderPtr mapableListings = factory->CreateFolder();
-	mapableListings->set_name("Mapable Listings");
-	
-	// Add it to the main KML object
-	root->add_feature(mapableListings);  // kml takes ownership.
-	
-	
+		
 	// Loop through all of the links on the page.
 	int i=0;
-	Bbox bbox;
-	vector<PlacemarkPtr> unmappable;
-	for(it = links.begin(); it != links.end() && (i<maxListings); ++it)
+	for(map<string,string>::iterator it=links.begin(); it!=links.end() && (i<maxListings); ++it)
 	{
+		// TO DO:  Both of these varnames already exist in a higher scope!
 		string title = it->first;
+		string description;
 		string url = it->second;
-		if(verbose) cerr << "Parsing " << i << " out of " << numLinks << ": " << title << endl;
-		
+		if(verbose) 
+			cerr << "Parsing " << i << " out of " << links.size() << ": " << title << endl;
 		i++;
+		
+		bool mappable=true;
 		try {
 			Webpage listing(url);
 			string addr = listing.getNodeAttribute(config["craigslist_google_maps_link"], "href");
 			addr.erase(0, config["craigslist_google_maps_link_prefix"].length());
 			
-			string description = listing.getNodeAsString(config["craigslist_item_description"]);
-			
-			// Create <Placemark> and give it a <name> and the <Point>.
-			PlacemarkPtr placemark = factory->CreatePlacemark();
-			placemark->set_name(title);
-			placemark->set_description(description);
+			description = listing.getNodeAsString(config["craigslist_item_description"]);
 			
 			if(!addr.empty())
 			{
 				string geocodeURL = config["google_geocode_base"] + addr;
 				if(verbose) cerr << "calling " << geocodeURL << endl;
 				Webpage geocode(geocodeURL, true);
-				
 				const char* status = geocode.getNodeContents(config["google_geocode_status"]);
 				if(strcmp(status, "OK")==0)
 				{
 					float lat = atof(geocode.getNodeContents(config["google_geocode_lat"]));
 					float lng = atof(geocode.getNodeContents(config["google_geocode_lng"]));
 					
-					// Expand the bounding box of all mappable listings
-					bbox.ExpandLatLon(lat, lng);
-					
-					if(verbose) cerr << "Adding placemark at " << lat << ", " << lng << endl;
-					
-					// Create <coordinates>.
-					CoordinatesPtr coordinates = factory->CreateCoordinates();
-					
-					// Create <coordinates>-122.0816695,37.42052549<coordinates>
-					coordinates->add_latlng(lat, lng);
-					
-					// Create <Point> and give it <coordinates>.
-					PointPtr point = factory->CreatePoint();
-					point->set_coordinates(coordinates);  // point takes ownership
-					
-					placemark->set_geometry(point);  // placemark takes ownership
-					
-					// Add it to the folder
-					mapableListings->add_feature(placemark);
-				}
-				else
-				{
-					if(verbose) cerr << "geocode failed for " << addr << endl;
-					unmappable.push_back(placemark);
-				}
-			}
-			else
-			{
-				if(verbose) cerr << "No Google Maps found on " << url << " Unmapable." << endl;
-				unmappable.push_back(placemark);
-			}
+					if(verbose) 
+						cerr << "Adding placemark at " << lat << ", " << lng << endl;
 
+					c2k.addMappable(title, description, lat, lng);
+				}
+				else {
+					if(verbose) cerr << "Geocode failed. Unmappable." << endl;
+					mappable=false;
+				}
+			}
+			else {
+				if(verbose) cerr << "No address found. Unmappable." << endl;
+				mappable=false;
+			}
+			
 		} catch(exception& e) {
 			if(verbose) cerr << "ERROR:  " << e.what() << endl;
+			mappable=false;
+		}
+		
+		if(!mappable)
+		{
+			c2k.addUnmappable(title, description);
 		}
 	}
-
-	double mid_lat, mid_lon;
-	bbox.GetCenter(&mid_lat, &mid_lon);
-	FolderPtr unmapableListings = factory->CreateFolder();
-	unmapableListings->set_name("Unmapable Listings");
-	
-	// Add it to the main KML object
-	root->add_feature(unmapableListings);  // kml takes ownership.
-
-	for(int i=0; i<unmappable.size(); i++)
-	{
-		// Create <coordinates>.
-		CoordinatesPtr coordinates = factory->CreateCoordinates();
-		
-		// Create <coordinates>-122.0816695,37.42052549<coordinates>
-		coordinates->add_latlng(mid_lat, mid_lon);
-		
-		// Create <Point> and give it <coordinates>.
-		PointPtr point = factory->CreatePoint();
-		point->set_coordinates(coordinates);  // point takes ownership
-		
-		unmappable[i]->set_geometry(point);  // placemark takes ownership
-		
-		// Add it to the folder
-		unmapableListings->add_feature(unmappable[i]);
-		
-	}
 	
 	
-	// Serialize to XML
-	std::string xml = SerializePretty(kml);
-
-	// Write it to file
-	if(outfile.is_open())
-	{
-		outfile << xml;
-		outfile.close();
-	}
-	else
-	{
-		cout << xml << endl;
-	}
-
-	/* Shutdown libxml */
+	// Decide where to put the output
+	std::ofstream realOutFile;
+	if(outfilepath!=NULL)
+		realOutFile.open(outfilepath, std::ios::out);
+	std::ostream & outFile = (realOutFile.is_open() ? realOutFile : std::cout);
+	
+	// Send the serialized file to whatever output we have set.
+	outFile << c2k.serialize();
+	
+	
+	// Shutdown libxml
     xmlCleanupParser();
 }
 
@@ -331,6 +234,24 @@ void parse_args(int argc, char* argv[])
 			exit(0);
 		} 
 	}
+}
+
+
+
+// -----------------------------------------
+map<string,string> default_config()
+{
+	map<string,string> defaultConfig;
+	defaultConfig["craigslist_links"]				= "/body/blockquote/p/a";
+	defaultConfig["craigslist_google_maps_link"]	= "//div[@id='userbody']//small/a";
+	defaultConfig["google_geocode_base"]			= "http://maps.googleapis.com/maps/api/geocode/xml?sensor=false&address=";
+	defaultConfig["google_geocode_status"]			= "/GeocodeResponse/status";
+	defaultConfig["google_geocode_lat"]			= "/GeocodeResponse/result/geometry/location/lat";
+	defaultConfig["google_geocode_lng"]			= "/GeocodeResponse/result/geometry/location/lng";
+	defaultConfig["craigslist_google_maps_link_prefix"] = "http://maps.google.com/?q=loc%3A+";
+	defaultConfig["craigslist_item_description"]	= "//div[@id='userbody']";
+	defaultConfig["user_agent"]					= "Mozilla/5.0";
+	return defaultConfig;
 }
 
 

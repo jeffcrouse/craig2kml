@@ -15,6 +15,9 @@
 		1F6C55BA1308E51900951625 /* libkmlengine.0.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 1F6C55B31308E51900951625 /* libkmlengine.0.dylib */; };
 		1F9A1FBE1309A65D0053EBA9 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1F9A1FBB1309A65D0053EBA9 /* main.cpp */; };
 		1F9A1FBF1309A65D0053EBA9 /* Webpage.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1F9A1FBC1309A65D0053EBA9 /* Webpage.cpp */; };
+		1FC05C6313104CCA009055B5 /* Craig2KML.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1FC05C5D13104CCA009055B5 /* Craig2KML.cpp */; };
+		1FC05C6413104CCA009055B5 /* Listing.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1FC05C5F13104CCA009055B5 /* Listing.cpp */; };
+		1FC05C6513104CCA009055B5 /* SearchResult.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1FC05C6113104CCA009055B5 /* SearchResult.cpp */; };
 		1FF45BC21308756E002D2889 /* libtidy.A.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 1FF45BC11308756E002D2889 /* libtidy.A.dylib */; };
 /* End PBXBuildFile section */
 
@@ -41,6 +44,12 @@
 		1F9A1FBC1309A65D0053EBA9 /* Webpage.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Webpage.cpp; path = src/Webpage.cpp; sourceTree = SOURCE_ROOT; };
 		1F9A1FBD1309A65D0053EBA9 /* Webpage.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Webpage.h; path = src/Webpage.h; sourceTree = SOURCE_ROOT; };
 		1FBEE9CD1309B96400A2D9FA /* craig2kml.1 */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.man; path = craig2kml.1; sourceTree = SOURCE_ROOT; };
+		1FC05C5D13104CCA009055B5 /* Craig2KML.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Craig2KML.cpp; path = src/Craig2KML.cpp; sourceTree = SOURCE_ROOT; };
+		1FC05C5E13104CCA009055B5 /* Craig2KML.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Craig2KML.h; path = src/Craig2KML.h; sourceTree = SOURCE_ROOT; };
+		1FC05C5F13104CCA009055B5 /* Listing.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Listing.cpp; path = src/Listing.cpp; sourceTree = SOURCE_ROOT; };
+		1FC05C6013104CCA009055B5 /* Listing.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Listing.h; path = src/Listing.h; sourceTree = SOURCE_ROOT; };
+		1FC05C6113104CCA009055B5 /* SearchResult.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = SearchResult.cpp; path = src/SearchResult.cpp; sourceTree = SOURCE_ROOT; };
+		1FC05C6213104CCA009055B5 /* SearchResult.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = SearchResult.h; path = src/SearchResult.h; sourceTree = SOURCE_ROOT; };
 		1FF45BC11308756E002D2889 /* libtidy.A.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libtidy.A.dylib; path = /usr/lib/libtidy.A.dylib; sourceTree = "<absolute>"; };
 		8DD76F6C0486A84900D96B5E /* craig2kmlDebug */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = craig2kmlDebug; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -80,6 +89,12 @@
 				1F9A1FBB1309A65D0053EBA9 /* main.cpp */,
 				1F9A1FBC1309A65D0053EBA9 /* Webpage.cpp */,
 				1F9A1FBD1309A65D0053EBA9 /* Webpage.h */,
+				1FC05C5D13104CCA009055B5 /* Craig2KML.cpp */,
+				1FC05C5E13104CCA009055B5 /* Craig2KML.h */,
+				1FC05C5F13104CCA009055B5 /* Listing.cpp */,
+				1FC05C6013104CCA009055B5 /* Listing.h */,
+				1FC05C6113104CCA009055B5 /* SearchResult.cpp */,
+				1FC05C6213104CCA009055B5 /* SearchResult.h */,
 			);
 			name = Source;
 			sourceTree = "<group>";
@@ -166,6 +181,9 @@
 			files = (
 				1F9A1FBE1309A65D0053EBA9 /* main.cpp in Sources */,
 				1F9A1FBF1309A65D0053EBA9 /* Webpage.cpp in Sources */,
+				1FC05C6313104CCA009055B5 /* Craig2KML.cpp in Sources */,
+				1FC05C6413104CCA009055B5 /* Listing.cpp in Sources */,
+				1FC05C6513104CCA009055B5 /* SearchResult.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

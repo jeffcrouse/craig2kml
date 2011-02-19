@@ -24,14 +24,20 @@
 #include "libxml/parser.h"
 #include "libxml/tree.h"
 #include "libxml/xmlsave.h"
+#include <locale>
+#include <iostream>
+#include <fstream>
 
 using namespace std;
 class Webpage {
 public:
 	
-	Webpage(string url, bool wellFormed=false);
+	Webpage(string url, bool wellFormed=false, bool verbose=true);
 	~Webpage();
 
+	// Run TidyLib on 'contents'
+	void tidy_me();
+	
 	// Gets a map of the content and href od all links within a given xpath expression
 	map<string,string> getLinks(string exp);
 	
@@ -48,7 +54,7 @@ public:
 	int contentLength() {	return contents.length();	}
 	
 	static string userAgent;
-	
+	static string cacheDirectory;
 protected:
 	
 	xmlXPathObjectPtr xpath(string exp);
@@ -57,6 +63,5 @@ protected:
 	xmlDocPtr doc;
 	xmlXPathContextPtr xpathCtx;
 	string contents;
-	
 };
 
