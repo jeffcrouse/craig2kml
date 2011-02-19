@@ -69,9 +69,6 @@ int main (int argc, char* argv[])
 	try {
 		// Create the main page with all of the listings
 		listingsPage = new Webpage(url, false, false, verbose);
-		if(verbose)
-			cerr << "Content length: " << listingsPage->contentLength() << endl;
-
 		links = listingsPage->getLinks(config["craigslist_links"]);
 		if(verbose)
 			cerr << "Retrieved " << links.size() << " links" << endl;
@@ -81,7 +78,6 @@ int main (int argc, char* argv[])
 			cerr << "ERROR:  " << s << endl;
 		return -1;
 	}
-	
 	
 	
 	// Create the document we will be outputting
@@ -255,7 +251,7 @@ string truncate(string str, int n)
 map<string,string> default_config()
 {
 	map<string,string> defaultConfig;
-	defaultConfig["craigslist_links"]				= "/body/blockquote/p/a";
+	defaultConfig["craigslist_links"]				= "//body/blockquote/p/a";
 	defaultConfig["craigslist_google_maps_link"]	= "//div[@id='userbody']//small/a";
 	defaultConfig["google_geocode_base"]			= "http://maps.googleapis.com/maps/api/geocode/xml?sensor=false&address=";
 	defaultConfig["google_geocode_status"]			= "/GeocodeResponse/status";

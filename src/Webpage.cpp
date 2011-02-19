@@ -204,7 +204,7 @@ void Webpage::tidy_me()
 
 // -------------------------------------------------------------
 xmlXPathObjectPtr Webpage::xpath(string exp)
-{	
+{		
 	const xmlChar* xpathExpr = BAD_CAST exp.c_str();
 	xmlXPathObjectPtr xpathObj = xmlXPathEvalExpression(xpathExpr, xpathCtx);
 	if(xpathObj == NULL)
@@ -222,7 +222,7 @@ map<string,string> Webpage::getLinks(string exp)
 	map<string,string> links;
 	xmlXPathObjectPtr obj = xpath(exp);
 	xmlNodeSetPtr nodeset = obj->nodesetval;
-
+	
 	for (int i=0; i<nodeset->nodeNr; i++)
 	{
 		xmlChar *href, *title;
