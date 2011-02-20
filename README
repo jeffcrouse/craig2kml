@@ -51,13 +51,13 @@ The RSS feeds only include the most recent 25 entries.  By scraping the page, yo
 Each listing that is parsed makes a call to the Google Geocoder API.  According to the "Usage Limits" section of the documentation (http://code.google.com/apis/maps/documentation/geocoding/#Limits), you can only perform 2,500 queries per day.  Presumably this is based on IP address.
 
 3. The makefile isn't working.  What's up?
-I use premake to generate makefiles.  You can find more information about it here http://industriousone.com/premake  This is not a requirement for building, but if you are having trouble building, you might want to take a look at the premake documentation.
+I use premake4 to generate makefiles.  You can find more information about it here http://industriousone.com/premake  This is not a requirement for building, but if you are having trouble building, you might want to take a look at the premake documentation.
 
 http://downloads.sourceforge.net/project/premake/Premake/4.3/premake-4.3-linux.tar.gz
+http://downloads.sourceforge.net/project/premake/Premake/4.3/premake-4.3-macosx.tar.gz
 
 4. I want to install this on my shared server.  How do I do that?
 You will probably have to install all of the requirements yourself (except CURL).  Unfortunately, you  need autotools and libtool to build libkml, so they are included here too.  Here is how I did it:
-
 
 mkdir ~/dist
 
@@ -100,17 +100,29 @@ tar -xvf libxml2-2.7.2.tar.gz
 make
 make install
 
-
-CPLUS_INCLUDE_PATH=/home/jcrouse/include:/home/jcrouse/include/kml
+CPLUS_INCLUDE_PATH=/home/jcrouse/include:/home/jcrouse/include/kml:/home/jcrouse/include/libxml2
 export CPLUS_INCLUDE_PATH
+
+LIBRARY_PATH=/home/jcrouse/lib
+export LIBRARY_PATH
+
+LD_LIBRARY_PATH="/home/jcrouse/lib:$LD_LIBRARY_PATH"
+export LD_LIBRARY_PATH
+
+git clone https://github.com/jefftimesten/craig2kml.git
+cd craig2kml
+make
 
 
 TO DO
 --------------
-- Check to make sure that it we can create the file at the beginning.
+- Check to make sure that  we can create the file at the beginning.
 - Better error checking
 - use regular expression instead of xpath for google maps link?
 - Provide sample JavaScript usage code
 - Use other contextual information to map non-mappable listings, such as title of the page and other geographic data
 - Create option to follow pagination
 - There are probably tons of memory leaks. I haven't done any leak testing.
+- Make unmappable ones a different color
+- resize images to max width
+

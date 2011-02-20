@@ -69,7 +69,7 @@ int main (int argc, char* argv[])
 	bool opened = listingsPage.open(url, false, false);
 	if(!opened) 
 	{
-		cerr << "couldn't open main listing page!" << endl;
+		cerr << "ERROR: couldn't open main listing page!" << endl;
 		return -1;
 	}
 	
@@ -163,24 +163,30 @@ int main (int argc, char* argv[])
 	
 	// Shutdown libxml
     xmlCleanupParser();
+	
+	
+	cerr << "DONE" << endl;
+	return 0;
 }
-
 
 
 
 // -----------------------------------------
 void help()
 {
-	cout << "typical: (-u|--url ) #### [(-o|--outfile) ####]" << endl;
-	cout << "  where:" << endl;
-	cout << "  -c (--config) use custom config values";
-	cout << "  -d (--cachedir) the directory in which to load and save cache files";
-	cout << "  -m (--max) maximum number of listings to include";
-	cout << "  -o (--outfile) is the file in which the kml will be saved" << endl;
-	cout << "     prints to stdout if no file is provided." << endl;
-	cout << "  -u (--url) [required]" << endl;
-	cout << "      the Craigslist search page URL to be translated" << endl;
-	cout << "  -v (--verbose) print messages to stderr";
+	cerr << endl;
+	cerr << "typical: (-u|--url ) #### [(-o|--outfile) ####]" << endl;
+	cerr << "  where:" << endl;
+	cerr << "  -c (--config) use custom config values";
+	cerr << "  -d (--cachedir) the directory in which to load and save cache files";
+	cerr << "  -h (--help) print a help message";
+	cerr << "  -m (--max) maximum number of listings to include";
+	cerr << "  -o (--outfile) is the file in which the kml will be saved" << endl;
+	cerr << "     prints to stdout if no file is provided." << endl;
+	cerr << "  -u (--url) [required]" << endl;
+	cerr << "      the Craigslist search page URL to be translated" << endl;
+	cerr << "  -v (--verbose) print messages to stderr";
+	cerr << endl;
 }
 
 
@@ -192,10 +198,8 @@ void parse_args(int argc, char* argv[])
 		if (strcmp(argv[i], "-o") == 0 || strcmp(argv[i], "--outfile") == 0)
 		{
 			if (i+1 == argc) {
-				// error messages intermingled with parsing logic
-				cerr << "Invalid " << argv[i];
-				cerr << " parameter: no outfile specified\n";
 				help();
+				cerr << "ERROR: Invalid " << argv[i] << " parameter: no outfile specified" << endl;
 				exit(1);
 			}
 			outfilepath = argv[++i];  // parsing action goes here
@@ -203,9 +207,8 @@ void parse_args(int argc, char* argv[])
 		else if (strcmp(argv[i], "-u") == 0 || strcmp(argv[i], "--url") == 0)
 		{
 			if (i+1 == argc) {
-				cerr << "Invalid " << argv[i];
-				cerr << " parameter: no URL specified\n";
 				help();
+				cerr << "ERROR: Invalid "<<argv[i]<<" parameter: no URL specified"<<endl;
 				exit(1);
 			}
 			url = argv[++i];
@@ -213,9 +216,8 @@ void parse_args(int argc, char* argv[])
 		else if (strcmp(argv[i], "-d") == 0 || strcmp(argv[i], "--cachedir") == 0)
 		{
 			if (i+1 == argc) {
-				cerr << "Invalid " << argv[i];
-				cerr << " parameter: no directory specified\n";
 				help();
+				cerr << "ERROR: Invalid "<<argv[i]<<" parameter: no directory specified"<<endl;
 				exit(1);
 			}
 			cachedir = argv[++i];
@@ -223,9 +225,8 @@ void parse_args(int argc, char* argv[])
 		else if(strcmp(argv[i], "--config") == 0 || strcmp(argv[i], "-c") == 0)
 		{
 			if (i+1 == argc) {
-				cerr << "Invalid " << argv[i];
-				cerr << " parameter: no config file specified\n";
 				help();
+				cerr << "ERROR: Invalid "<<argv[i]<<" parameter: no config file specified"<<endl;
 				exit(1);
 			}
 			configfilename = argv[++i];
@@ -233,9 +234,8 @@ void parse_args(int argc, char* argv[])
 		else if(strcmp(argv[i], "--max") == 0 || strcmp(argv[i], "-m") == 0)
 		{
 			if (i+1 == argc) {
-				cerr << "Invalid " << argv[i];
-				cerr << " parameter: no integer provided\n";
 				help();
+				cerr << "ERROR: Invalid "<<argv[i]<<" parameter: no integer provided"<<endl;
 				exit(1);
 			}
 			maxListings = atoi(argv[++i]);
@@ -243,6 +243,11 @@ void parse_args(int argc, char* argv[])
 		else if(strcmp(argv[i], "--verbose") == 0 || strcmp(argv[i], "-v") == 0)
 		{
 			verbose=true;
+		}
+		else if (strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0)
+		{
+			help();
+			exit(0);
 		}
 		else if (strcmp(argv[i], "--version") == 0)
 		{
@@ -265,7 +270,6 @@ string truncate(string str, int n)
 	{
 		return str;
 	}
-
 }
 
 // -----------------------------------------
@@ -274,13 +278,9 @@ map<string,string> default_config()
 	map<string,string> defaultConfig;
 	defaultConfig["craigslist_links"]				= "//body/blockquote/p/a";
 	defaultConfig["craigslist_google_maps_link"]	= "//div[@id='userbody']//small/a";
-	//defaultConfig["google_geocode_base"]			= "http://maps.googleapis.com/maps/api/geocode/xml?sensor=false&address=";
-	//defaultConfig["google_geocode_status"]			= "/GeocodeResponse/status";
-	//defaultConfig["google_geocode_lat"]			= "/GeocodeResponse/result/geometry/location/lat";
-	//defaultConfig["google_geocode_lng"]			= "/GeocodeResponse/result/geometry/location/lng";
 	defaultConfig["craigslist_google_maps_link_prefix"] = "http://maps.google.com/?q=loc%3A+";
 	defaultConfig["craigslist_item_description"]	= "//div[@id='userbody']";
-	defaultConfig["user_agent"]					= "Mozilla/5.0";
+	defaultConfig["user_agent"]						= "Mozilla/5.0";
 	return defaultConfig;
 }
 
@@ -300,12 +300,13 @@ void load_config_file(const char* filename, map<string,string>& config)
 				istringstream liness( line );
 				getline( liness, name, ' ' );
 				getline( liness, value, ' ' );
-				if(config.find(name) != config.end())
+				if(config.find(name) != config.end()) 
 				{
 					if(verbose) cerr << "setting " << name << " to " << value << endl;
 					config[name] = value;
 				}
-				else {
+				else
+				{
 					cerr << "Unrecognized config option: " << name << endl;
 				}
 			}
