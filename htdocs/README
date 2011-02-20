@@ -1,0 +1,93 @@
+craig2kml
+By Jeff Crouse
+jefftimesten at gmail dot com
+
+This software is licensed under the GNU-GPL version 3 or later.
+
+craig2kml is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public
+License as published by the Free Software Foundation; either
+version 3 of the License, or (at your option) any later version.
+
+craig2kml is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+General Public License for more details.
+
+
+INTRODUCTION
+----------------
+This is an example of how you could install craig2kml in a server environment.
+
+
+INSTALL
+----------------
+
+1. Install craig2kml (see README)
+
+2. Make a copy of config.sample.php called config.php
+
+3. Edit the copy you made.  Each of the config options are explained in the file.  
+
+
+
+FAQ
+----------------
+
+1. How do I install the requirements on my shared server?
+On most shared servers, you cannot install the prerequisites in the normal location (/usr/local).
+Here is how you can install them in your home directory and prepare to build craig2kml 
+
+mkdir ~/dist
+
+cd ~/dist
+wget http://ftp.gnu.org/gnu/automake/automake-1.9.tar.gz
+tar -xvf automake-1.9.tar.gz
+cd automake-1.9
+./configure --prefix=$HOME
+make
+make install
+
+cd ~/dist
+wget http://ftp.gnu.org/gnu/libtool/libtool-2.4.tar.gz
+tar -xvf libtool-2.4.tar.gz
+cd libtool-2.4
+./configure --prefix=$HOME
+make
+make install
+
+cd ~/dist
+svn checkout http://libkml.googlecode.com/svn/trunk/ libkml
+./autogen.sh
+./configure --prefix=$HOME
+make
+make install
+
+cd ~/dist
+cvs -z3 -d:pserver:anonymous@tidy.cvs.sourceforge.net:/cvsroot/tidy co -P tidy
+cd tidy
+chmod a+x build/gnuauto/setup.sh
+./build/gnuauto/setup.sh
+./configure  --prefix=$HOME
+make
+make install
+
+cd ~/dist
+wget ftp://xmlsoft.org/libxml2/libxml2-2.7.2.tar.gz
+tar -xvf libxml2-2.7.2.tar.gz
+./configure  --prefix=$HOME
+make
+make install
+
+CPLUS_INCLUDE_PATH=$HOME/include:$HOME/include/kml:$HOME/include/libxml2
+export CPLUS_INCLUDE_PATH
+
+LIBRARY_PATH=$HOME/lib
+export LIBRARY_PATH
+
+LD_LIBRARY_PATH="$HOME/lib:$LD_LIBRARY_PATH"
+export LD_LIBRARY_PATH
+
+git clone https://github.com/jefftimesten/craig2kml.git
+cd craig2kml
+make
