@@ -67,15 +67,14 @@ bool Webpage::open(string url, bool wellFormed, bool useCache)
 	if(!loaded)
 	{
 		contents = download(url, verbose);
+		if(!wellFormed)
+		{
+			tidy_me();
+		}
 		if(useCache)
 		{
 			saveToCache();
 		}
-	}
-	
-	if(!wellFormed)
-	{
-		tidy_me();
 	}
 	
 	// get rid of doctype line.  It messes up the parser

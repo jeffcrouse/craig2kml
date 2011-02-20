@@ -20,18 +20,6 @@ INTRODUCTION
 This project started as Earthify (http://www.earthify.org), which kept breaking.  I also heard recently that some websites that were scraping Craigslist were being blocked.  So I decided to take the idea and turn it into a simple c++ program that anyone could use on their own computer, or install on a server and make a Google Maps wrapper (which I plan to do at some point at earthify.org).
 
 
-FAQ
--------------
-1.  Why not just use the rss feeds?
-The RSS feeds only include the most recent 25 entries.  By scraping the page, you can get all 100.  In future versions, it will follow the pagination also.
-
-2. Is there a limit to how often I can use craig2kml?
-Each listing that is parsed makes a call to the Google Geocoder API.  According to the "Usage Limits" section of the documentation (http://code.google.com/apis/maps/documentation/geocoding/#Limits), you can only perform 2,500 queries per day.  Presumably this is based on IP address.
-
-3. The makefile isn't working.  What's up?
-I use premake to generate makefiles.  You can find more information about it here http://industriousone.com/premake  This is not a requirement for building, but if you are having trouble building, you might want to take a look at the premake documentation.
-
-
 REQUIREMENTS
 ----------------
 TidyLib		http://tidy.sourceforge.net/
@@ -42,19 +30,81 @@ libCurl		http://curl.haxx.se/
 
 EXAMPLE USAGE
 ---------------
-craig2kml -v --url "http://newyork.craigslist.org/search/nfa?query=&srchType=A&minAsk=&maxAsk=2000&bedrooms=&addTwo=purrr&hasPic=1" -o brooklynrental.kml
+craig2kml --url "http://newyork.craigslist.org/search/nfa?srchType=A&maxAsk=2000" -o max2000.kml
 
 This will create the KML file "brooklynrental.kml" and populate it with placemarks.  There are 2 folders: Mappable Listings and Unmappable Listings. The unmappable ones (those without a google maps link or fail geocoding) are placed in the middle of the mappable ones.
+
+INSTALL
+---------------
+There is no configure script, so all you have to do is:
+
+cd /craig2kml-0.1
+make
+
+
+FAQ
+-------------
+1.  Why not just use the rss feeds?
+The RSS feeds only include the most recent 25 entries.  By scraping the page, you can get all 100.  In future versions, it will follow the pagination also.
+
+2. Is there a limit to how often I can use craig2kml?
+Each listing that is parsed makes a call to the Google Geocoder API.  According to the "Usage Limits" section of the documentation (http://code.google.com/apis/maps/documentation/geocoding/#Limits), you can only perform 2,500 queries per day.  Presumably this is based on IP address.
+
+3. The makefile isn't working.  What's up?
+I use premake to generate makefiles.  You can find more information about it here http://industriousone.com/premake  This is not a requirement for building, but if you are having trouble building, y
+ou might want to take a look at the premake documentation.
+
+4. I want to install this on my shared server.  How do I do that?
+You will probably have to install all of the prereqs yourself (except CURL, probably).  Here is how I did it:
+
+mkdir ~/dist
+
+cd ~/dist
+wget http://ftp.gnu.org/gnu/automake/automake-1.9.tar.gz
+tar -xvf automake-1.9.tar.gz
+cd automake-1.9
+./configure --prefix=/home/jcrouse/
+make
+make install
+
+cd ~/dist
+wget http://ftp.gnu.org/gnu/libtool/libtool-2.4.tar.gz
+tar -xvf libtool-2.4.tar.gz
+cd libtool-2.4
+./configure --prefix=/home/jcrouse/
+make
+make install
+
+cd ~/dist
+svn checkout http://libkml.googlecode.com/svn/trunk/ libkml
+./autogen.sh
+./configure --prefix=/home/jcrouse/
+make
+make install
+
+cd ~/dist
+cvs -z3 -d:pserver:anonymous@tidy.cvs.sourceforge.net:/cvsroot/tidy co -P tidy
+cd tidy
+chmod a+x build/gnuauto/setup.sh
+./build/gnuauto/setup.sh
+./configure  --prefix=/home/jcrouse/
+make
+make install
+
+cd ~/dist
+wget ftp://xmlsoft.org/libxml2/libxml2-2.7.2.tar.gz
+tar -xvf libxml2-2.7.2.tar.gz
+./configure  --prefix=/home/jcrouse/
+make
+make install
 
 
 TO DO
 --------------
-- Don't overwrite output file until the end, but check to make sure that it we can create the file at the beginning.
+- Check to make sure that it we can create the file at the beginning.
 - Better error checking
 - use regular expression instead of xpath for google maps link?
 - Provide sample JavaScript usage code
 - Use other contextual information to map non-mappable listings, such as title of the page and other geographic data
 - Create option to follow pagination
-- There are probably tons of memory leaks.  I haven't done much releasing at all.
-- Fix prebuild script so that the generated Makefile works.
-- When you compile with the makefile, there are no results??  faulty linking?
+- There are probably tons of memory leaks. I haven't done any leak testing.

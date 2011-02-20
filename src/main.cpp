@@ -12,8 +12,6 @@
 #include <iostream>
 #include <fstream>
 #include "Webpage.h"
-#include "SearchResult.h"
-#include "Listing.h"
 #include "Craig2KML.h"
 
 
@@ -99,6 +97,7 @@ int main (int argc, char* argv[])
 
 		bool mappable=true;
 
+		
 		Webpage listing;		
 		if(listing.open(url, false, true))
 		{
@@ -109,18 +108,18 @@ int main (int argc, char* argv[])
 			
 			if(!addr.empty())
 			{
-				string geocodeURL = config["google_geocode_base"] + addr;
+				string geocodeURL = "http://maps.googleapis.com/maps/api/geocode/xml?sensor=false&address="+addr;
 				if(verbose) 
 					cerr << "calling " << geocodeURL << endl;
 				
 				Webpage geocode;
 				if(geocode.open(geocodeURL, true, true))
 				{
-					const char* status = geocode.getNodeContents(config["google_geocode_status"]);
+					const char* status = geocode.getNodeContents("/GeocodeResponse/status");
 					if(strcmp(status, "OK")==0)
 					{
-						float lat = atof(geocode.getNodeContents(config["google_geocode_lat"]));
-						float lng = atof(geocode.getNodeContents(config["google_geocode_lng"]));
+						float lat = atof(geocode.getNodeContents("/GeocodeResponse/result/geometry/location/lat"));
+						float lng = atof(geocode.getNodeContents("/GeocodeResponse/result/geometry/location/lng"));
 						
 						if(verbose) 
 							cerr << "Adding placemark at " << lat << ", " << lng << endl;
@@ -272,10 +271,10 @@ map<string,string> default_config()
 	map<string,string> defaultConfig;
 	defaultConfig["craigslist_links"]				= "//body/blockquote/p/a";
 	defaultConfig["craigslist_google_maps_link"]	= "//div[@id='userbody']//small/a";
-	defaultConfig["google_geocode_base"]			= "http://maps.googleapis.com/maps/api/geocode/xml?sensor=false&address=";
-	defaultConfig["google_geocode_status"]			= "/GeocodeResponse/status";
-	defaultConfig["google_geocode_lat"]			= "/GeocodeResponse/result/geometry/location/lat";
-	defaultConfig["google_geocode_lng"]			= "/GeocodeResponse/result/geometry/location/lng";
+	//defaultConfig["google_geocode_base"]			= "http://maps.googleapis.com/maps/api/geocode/xml?sensor=false&address=";
+	//defaultConfig["google_geocode_status"]			= "/GeocodeResponse/status";
+	//defaultConfig["google_geocode_lat"]			= "/GeocodeResponse/result/geometry/location/lat";
+	//defaultConfig["google_geocode_lng"]			= "/GeocodeResponse/result/geometry/location/lng";
 	defaultConfig["craigslist_google_maps_link_prefix"] = "http://maps.google.com/?q=loc%3A+";
 	defaultConfig["craigslist_item_description"]	= "//div[@id='userbody']";
 	defaultConfig["user_agent"]					= "Mozilla/5.0";
