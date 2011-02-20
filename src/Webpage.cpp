@@ -33,7 +33,8 @@ Webpage::Webpage()
 // -------------------------------------------------------------
 Webpage::~Webpage()
 {
-	xmlFreeDoc(doc);
+	// TO DO:  FIX THIS STUPID!
+	//xmlFreeDoc(doc);
 	//xmlXPathFreeContext(xpathCtx); 
 }
 
