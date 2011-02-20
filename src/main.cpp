@@ -71,23 +71,26 @@ int main (int argc, char* argv[])
 		cerr << "opening " << truncate(url) << endl;
 	
 	
-	// Open the main page
 	Webpage listingsPage;
-	listingsPage.setVerbose(verbose);
-	bool opened = listingsPage.open(url, false, false);
-	if(!opened) 
-	{
-		cerr << "ERROR: couldn't open main listing page!" << endl;
+	map<string,string> links;
+	try {
+		// Open the main page
+		listingsPage.setVerbose(verbose);
+		bool opened = listingsPage.open(url, false, false);
+		if(!opened) 
+		{
+			cerr << "ERROR: couldn't open main listing page!" << endl;
+			return 1;
+		}
+		
+		// Get the links from the main listings page.
+		links = listingsPage.getLinks(config["craigslist_links"]);
+		if(verbose)
+			cerr << "Retrieved " << links.size() << " links" << endl;
+	} catch (std::logic_error& e) {
+		cerr << "ERROR: " << e.what() << endl;
 		return 1;
 	}
-	
-	
-	// Get the links from the main listings page.
-	map<string,string> links;
-	links = listingsPage.getLinks(config["craigslist_links"]);
-	if(verbose)
-		cerr << "Retrieved " << links.size() << " links" << endl;
-	
 
 	// Create the document we will be outputting
 	Craig2KML c2k(listingsPage.getNodeContents("//title"), verbose);
