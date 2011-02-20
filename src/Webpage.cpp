@@ -77,10 +77,6 @@ bool Webpage::open(string url, bool wellFormed, bool useCache)
 		{
 			tidy_me();
 		}
-		if(useCache)
-		{
-			saveToCache();
-		}
 	}
 	
 	// get rid of doctype line.  It messes up the parser
@@ -91,13 +87,27 @@ bool Webpage::open(string url, bool wellFormed, bool useCache)
 		contents.erase(0, pos+1);
 	}
 	
+	// HACK:  I think tidySaveString puts some extra junk at the end of the document
+	// if there is anything after </html>, get rid of it.
+	size_t end = contents.find("</html>");
+	if(end!=string::npos)
+	{
+		contents.erase(end+7);
+	}
+
+	if(useCache)
+	{
+		saveToCache();
+	}
+	
 	if(verbose)
 		cerr << "Parsing document. Length: " << contents.length() << endl;
+	
 	
 	doc = xmlParseMemory(contents.c_str(), contents.length());
 	if (doc == NULL) {
 		if(verbose)
-			cerr << "Error: unable to parse HTML" << endl;
+			cerr << "ERROR: Unable to parse HTML" << endl;
 		return false;
 	}
 	
@@ -105,7 +115,7 @@ bool Webpage::open(string url, bool wellFormed, bool useCache)
 	if(xpathCtx == NULL) {
 		xmlFreeDoc(doc);
 		if(verbose)
-			cerr << "Error: unable to create new XPath context" << endl;
+			cerr << "ERROR: Unable to create new XPath context" << endl;
 		return false;
 	}
 	
@@ -245,12 +255,9 @@ void Webpage::tidy_me()
 		tmbstr buffer = NULL;
 		uint buflen = 0;
 		int status;
-		//status = tidySaveStdout( tdoc );
 		do {
 			status = tidySaveString( _tdoc, buffer, &buflen );
-			//printf("tidySaveString status, buflen = %d, %d\n", status, buflen);
 			if (status == -ENOMEM) {
-				//printf("Need to allocate buffer of at least %d bytes in size\n", buflen);
 				if(buffer) 
 					free(buffer);
 				buffer = (tmbstr)malloc(buflen + 1);
@@ -289,7 +296,10 @@ map<string,string> Webpage::getLinks(string exp)
 		xmlChar *href, *title;
 		href = xmlGetProp(nodeset->nodeTab[i], (const xmlChar *)"href");
 		title = xmlNodeListGetString(doc, nodeset->nodeTab[i]->xmlChildrenNode, 1);
-		links[(const char*)title] = (const char*)href;
+		if(href && title)
+		{
+			links[(const char*)title] = (const char*)href;
+		}
 	}
 
 	xmlXPathFreeObject(obj);
