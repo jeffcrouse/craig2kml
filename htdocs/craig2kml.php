@@ -2,26 +2,29 @@
 require_once("functions.php");
 require_once("config.php");
 
-$error=false;
-$url = @urldecode($_REQUEST['url']);
+$error=true;
 
 // Make sure that a URL is set and that it is a valid Craigslist link
-if(isset($_REQUEST['url']) && preg_match("|^http://[^\.]+\.craigslist\.org/search|", $url))
+if(isset($_REQUEST['url']))
 {	
-	$filebase 	= 	rand_str();
-	$kmlfile 	= 	"{$kmldir}/{$filebase}.kml";
-	$kmlurl		=	"{$urlbase}/{$kmlfile}";
-	$logfile	=	"{$kmldir}/{$filebase}.log";
-	$logurl		=	"{$urlbase}/{$logfile}";
-	$cmd = sprintf('LD_LIBRARY_PATH="%s:$LD_LIBRARY_PATH" %s -v -o "%s" -u "%s" -c %s -d %s', 
-		$ld_library_path, 
-		$craig2kml_exe, 
-		$kmlfile, $url,
-		$craig2kml_configfile,
-		$craig2kml_cachedir);
-	`$cmd &>$logfile &`;
+	$url = urldecode($_REQUEST['url']);
+	if(filter_var($url, FILTER_VALIDATE_URL, FILTER_FLAG_SCHEME_REQUIRED))
+	{
+		$filebase 	= 	rand_str();
+		$kmlfile 	= 	"{$kmldir}/{$filebase}.kml";
+		$kmlurl		=	"{$urlbase}/{$kmlfile}";
+		$logfile	=	"{$kmldir}/{$filebase}.log";
+		$logurl		=	"{$urlbase}/{$logfile}";
+		$cmd = sprintf('LD_LIBRARY_PATH="%s:$LD_LIBRARY_PATH" %s -v -o "%s" -u "%s" -c %s -d %s', 
+			$ld_library_path, 
+			$craig2kml_exe, 
+			$kmlfile, $url,
+			$craig2kml_configfile,
+			$craig2kml_cachedir);
+		`$cmd &>$logfile &`;
+		$error = false;
+	}
 }
-else $error=true;
 ?>
 <!DOCTYPE HTML>
 <html>

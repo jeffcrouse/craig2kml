@@ -7,7 +7,7 @@ project "craig2kml"
 	language "C++"
 	files { "src/*.h", "src/*.cpp" }
 	links { 
-		"xml2", "tidy", "curl", "z", "pthread", "m",
+		"xml2", "tidy", "pcrecpp", "curl", "z", "pthread", "m",
 		"kmlbase", "kmlconvenience", "kmldom", "kmlengine" }
 	libdirs { 
 		"/opt/local/lib", 

@@ -13,7 +13,7 @@
 #include <fstream>
 #include "Webpage.h"
 #include "Craig2KML.h"
-
+#include <pcrecpp.h>
 
 // All of these vars are set with command line options
 const char* outfilepath=NULL;
@@ -45,9 +45,8 @@ int main (int argc, char* argv[])
 	if(url==NULL)
 	{
 		help();
-		exit(1);
+		return 1;
 	}
-	
 	
 	// Parse the config file if it exists.
 	if(configfilename!=NULL)
@@ -55,6 +54,15 @@ int main (int argc, char* argv[])
 		load_config_file(configfilename, config);
 	}
 
+	
+	// Make sure we have a Craigslist URL
+	pcrecpp::RE re(config["acceptable_url_re"]);
+	if(!re.FullMatch(url))
+	{
+		cerr << "ERROR: URL is not acceptable" << endl;
+		return 1;
+	}
+	
 	// Set the user agent and cache directory for all Webpage operations
 	Webpage::userAgent = config["user_agent"];
 	if(cachedir!=NULL) Webpage::cacheDirectory = cachedir;
@@ -70,7 +78,7 @@ int main (int argc, char* argv[])
 	if(!opened) 
 	{
 		cerr << "ERROR: couldn't open main listing page!" << endl;
-		return -1;
+		return 1;
 	}
 	
 	
@@ -281,6 +289,7 @@ map<string,string> default_config()
 	defaultConfig["craigslist_google_maps_link_prefix"] = "http://maps.google.com/?q=loc%3A+";
 	defaultConfig["craigslist_item_description"]	= "//div[@id='userbody']";
 	defaultConfig["user_agent"]						= "Mozilla/5.0";
+	defaultConfig["acceptable_url_re"]					= "^http://[^\\.]+\\.craigslist\\.org/.+";
 	return defaultConfig;
 }
 
@@ -318,3 +327,4 @@ void load_config_file(const char* filename, map<string,string>& config)
 		cerr << "Unable to open configfile.  Using defaults." << endl; 
 	}	
 }
+

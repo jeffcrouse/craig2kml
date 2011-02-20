@@ -26,7 +26,7 @@ TidyLib		http://tidy.sourceforge.net/
 libXML2		http://xmlsoft.org/
 libKML  	http://code.google.com/p/libkml/
 libCurl		http://curl.haxx.se/
-
+PCRE		http://pcre.org/
 
 EXAMPLE USAGE
 ---------------

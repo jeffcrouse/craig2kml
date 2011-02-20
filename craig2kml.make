@@ -29,7 +29,7 @@ ifeq ($(config),debug)
   CFLAGS    += $(CPPFLAGS) $(ARCH) -g
   CXXFLAGS  += $(CFLAGS) 
   LDFLAGS   += -L/opt/local/lib -L/usr/local/lib -L/usr/lib
-  LIBS      += -lxml2 -ltidy -lcurl -lz -lpthread -lm -lkmlbase -lkmlconvenience -lkmldom -lkmlengine
+  LIBS      += -lxml2 -ltidy -lpcrecpp -lcurl -lz -lpthread -lm -lkmlbase -lkmlconvenience -lkmldom -lkmlengine
   RESFLAGS  += $(DEFINES) $(INCLUDES) 
   LDDEPS    += 
   LINKCMD    = $(CXX) -o $(TARGET) $(OBJECTS) $(LDFLAGS) $(RESOURCES) $(ARCH) $(LIBS)
@@ -51,7 +51,7 @@ ifeq ($(config),release)
   CFLAGS    += $(CPPFLAGS) $(ARCH) -O2
   CXXFLAGS  += $(CFLAGS) 
   LDFLAGS   += -Wl,-x -L/opt/local/lib -L/usr/local/lib -L/usr/lib
-  LIBS      += -lxml2 -ltidy -lcurl -lz -lpthread -lm -lkmlbase -lkmlconvenience -lkmldom -lkmlengine
+  LIBS      += -lxml2 -ltidy -lpcrecpp -lcurl -lz -lpthread -lm -lkmlbase -lkmlconvenience -lkmldom -lkmlengine
   RESFLAGS  += $(DEFINES) $(INCLUDES) 
   LDDEPS    += 
   LINKCMD    = $(CXX) -o $(TARGET) $(OBJECTS) $(LDFLAGS) $(RESOURCES) $(ARCH) $(LIBS)

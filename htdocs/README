@@ -58,6 +58,7 @@ make install
 
 cd ~/dist
 svn checkout http://libkml.googlecode.com/svn/trunk/ libkml
+cd libkml
 ./autogen.sh
 ./configure --prefix=$HOME
 make
@@ -75,6 +76,15 @@ make install
 cd ~/dist
 wget ftp://xmlsoft.org/libxml2/libxml2-2.7.2.tar.gz
 tar -xvf libxml2-2.7.2.tar.gz
+cd libxml2-2.7.2
+./configure  --prefix=$HOME
+make
+make install
+
+cd ~/dist
+wget ftp://ftp.csx.cam.ac.uk/pub/software/programming/pcre/pcre-8.02.tar.gz
+tar -xvf pcre-8.02.tar.gz
+cd pcre-8.02
 ./configure  --prefix=$HOME
 make
 make install

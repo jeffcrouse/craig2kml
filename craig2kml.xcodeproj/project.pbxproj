@@ -15,6 +15,7 @@
 		1F6C55BA1308E51900951625 /* libkmlengine.0.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 1F6C55B31308E51900951625 /* libkmlengine.0.dylib */; };
 		1F9A1FBE1309A65D0053EBA9 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1F9A1FBB1309A65D0053EBA9 /* main.cpp */; };
 		1F9A1FBF1309A65D0053EBA9 /* Webpage.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1F9A1FBC1309A65D0053EBA9 /* Webpage.cpp */; };
+		1FB58F9D1311B141003E56D0 /* libpcrecpp.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 1FB58F9C1311B141003E56D0 /* libpcrecpp.a */; };
 		1FC05C6313104CCA009055B5 /* Craig2KML.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1FC05C5D13104CCA009055B5 /* Craig2KML.cpp */; };
 		1FF45BC21308756E002D2889 /* libtidy.A.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 1FF45BC11308756E002D2889 /* libtidy.A.dylib */; };
 /* End PBXBuildFile section */
@@ -41,6 +42,7 @@
 		1F9A1FBB1309A65D0053EBA9 /* main.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = main.cpp; path = src/main.cpp; sourceTree = SOURCE_ROOT; };
 		1F9A1FBC1309A65D0053EBA9 /* Webpage.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Webpage.cpp; path = src/Webpage.cpp; sourceTree = SOURCE_ROOT; };
 		1F9A1FBD1309A65D0053EBA9 /* Webpage.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Webpage.h; path = src/Webpage.h; sourceTree = SOURCE_ROOT; };
+		1FB58F9C1311B141003E56D0 /* libpcrecpp.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libpcrecpp.a; path = /usr/local/lib/libpcrecpp.a; sourceTree = "<absolute>"; };
 		1FBEE9CD1309B96400A2D9FA /* craig2kml.1 */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.man; path = craig2kml.1; sourceTree = SOURCE_ROOT; };
 		1FC05C5D13104CCA009055B5 /* Craig2KML.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Craig2KML.cpp; path = src/Craig2KML.cpp; sourceTree = SOURCE_ROOT; };
 		1FC05C5E13104CCA009055B5 /* Craig2KML.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Craig2KML.h; path = src/Craig2KML.h; sourceTree = SOURCE_ROOT; };
@@ -60,6 +62,7 @@
 				1F6C55B81308E51900951625 /* libkmlconvenience.0.dylib in Frameworks */,
 				1F6C55B91308E51900951625 /* libkmldom.0.dylib in Frameworks */,
 				1F6C55BA1308E51900951625 /* libkmlengine.0.dylib in Frameworks */,
+				1FB58F9D1311B141003E56D0 /* libpcrecpp.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -100,6 +103,7 @@
 		1F9A1FC11309A6630053EBA9 /* Libs */ = {
 			isa = PBXGroup;
 			children = (
+				1FB58F9C1311B141003E56D0 /* libpcrecpp.a */,
 				1FF45BC11308756E002D2889 /* libtidy.A.dylib */,
 				1F6C54DA1308D69100951625 /* libcurl.a */,
 				1F6C54FD1308D9C100951625 /* libxml2.2.dylib */,
