@@ -19,7 +19,7 @@ bool Webpage::libxmlInited = false;
 // -------------------------------------------------------------
 Webpage::Webpage()
 {
-	verbose = true;
+	verbose = false;
 	if(!Webpage::libxmlInited)
 	{
 		if(verbose)
@@ -208,7 +208,8 @@ string Webpage::download(string url, bool verbose)
 	if(verbose) cerr << status_msg << endl;
 	if (http_code != 200 || result == CURLE_ABORTED_BY_CALLBACK)
 	{
-		throw std::runtime_error("HTTP error");	
+		if(verbose) cerr << "HTTP error" << endl;
+		return "";
 	}
 	
 	return str;

@@ -65,6 +65,7 @@ int main (int argc, char* argv[])
 	
 	// Open the main page
 	Webpage listingsPage;
+	listingsPage.setVerbose(verbose);
 	bool opened = listingsPage.open(url, false, false);
 	if(!opened) 
 	{
@@ -98,7 +99,8 @@ int main (int argc, char* argv[])
 		bool mappable=true;
 
 		
-		Webpage listing;		
+		Webpage listing;
+		listing.setVerbose(verbose);
 		if(listing.open(url, false, true))
 		{
 			string addr = listing.getNodeAttribute(config["craigslist_google_maps_link"], "href");
@@ -113,6 +115,7 @@ int main (int argc, char* argv[])
 					cerr << "calling " << geocodeURL << endl;
 				
 				Webpage geocode;
+				geocode.setVerbose(verbose);
 				if(geocode.open(geocodeURL, true, true))
 				{
 					const char* status = geocode.getNodeContents("/GeocodeResponse/status");

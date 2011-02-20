@@ -51,8 +51,9 @@ The RSS feeds only include the most recent 25 entries.  By scraping the page, yo
 Each listing that is parsed makes a call to the Google Geocoder API.  According to the "Usage Limits" section of the documentation (http://code.google.com/apis/maps/documentation/geocoding/#Limits), you can only perform 2,500 queries per day.  Presumably this is based on IP address.
 
 3. The makefile isn't working.  What's up?
-I use premake to generate makefiles.  You can find more information about it here http://industriousone.com/premake  This is not a requirement for building, but if you are having trouble building, y
-ou might want to take a look at the premake documentation.
+I use premake to generate makefiles.  You can find more information about it here http://industriousone.com/premake  This is not a requirement for building, but if you are having trouble building, you might want to take a look at the premake documentation.
+
+http://downloads.sourceforge.net/project/premake/Premake/4.3/premake-4.3-linux.tar.gz
 
 4. I want to install this on my shared server.  How do I do that?
 You will probably have to install all of the requirements yourself (except CURL).  Unfortunately, you  need autotools and libtool to build libkml, so they are included here too.  Here is how I did it:
@@ -98,6 +99,10 @@ tar -xvf libxml2-2.7.2.tar.gz
 ./configure  --prefix=/home/jcrouse/
 make
 make install
+
+
+CPLUS_INCLUDE_PATH=/home/jcrouse/include:/home/jcrouse/include/kml
+export CPLUS_INCLUDE_PATH
 
 
 TO DO
