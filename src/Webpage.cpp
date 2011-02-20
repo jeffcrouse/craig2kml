@@ -67,6 +67,11 @@ bool Webpage::open(string url, bool wellFormed, bool useCache)
 	if(!loaded)
 	{
 		contents = download(url, verbose);
+		if(contents.empty())
+		{
+			if(verbose) cerr << "No contents downloaded." << endl;
+			return false;
+		}
 		if(!wellFormed)
 		{
 			tidy_me();
@@ -191,7 +196,8 @@ string Webpage::download(string url, bool verbose)
 	// Did we succeed?
 	if (result != CURLE_OK)
 	{
-		throw std::runtime_error(errorBuffer);						
+		if(verbose) cerr << "Bad result from CURL" << endl;
+		return "";						
 	}
 	
 	long http_code = 0;

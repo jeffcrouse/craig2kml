@@ -55,7 +55,8 @@ I use premake to generate makefiles.  You can find more information about it her
 ou might want to take a look at the premake documentation.
 
 4. I want to install this on my shared server.  How do I do that?
-You will probably have to install all of the prereqs yourself (except CURL, probably).  Here is how I did it:
+You will probably have to install all of the requirements yourself (except CURL).  Unfortunately, you  need autotools and libtool to build libkml, so they are included here too.  Here is how I did it:
+
 
 mkdir ~/dist
 

@@ -27,6 +27,7 @@
 #include <locale>
 #include <iostream>
 #include <fstream>
+#include <sys/errno.h>
 
 using namespace std;
 class Webpage {
