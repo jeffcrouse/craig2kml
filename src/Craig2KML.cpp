@@ -35,13 +35,19 @@ Craig2KML::Craig2KML(string title, bool verbose) {
 
 string Craig2KML::serialize()
 {
+	int total = mappablePlacemarks.size() + unmappablePlacemarks.size();
+	char name[255];
+	
+	
 	FolderPtr mappableListings = factory->CreateFolder();
-	mappableListings->set_name("Mappable Listings");
+	sprintf(name, "Mappable Listings (%d/%d)", (int)mappablePlacemarks.size(), total);
+	mappableListings->set_name(name);
 	rootFolder->add_feature(mappableListings);  // kml takes ownership.
 	
 	
 	FolderPtr unmappableListings= factory->CreateFolder();
-	unmappableListings->set_name("Unmappable Listings");
+	sprintf(name, "Unmappable Listings (%d/%d)", (int)unmappablePlacemarks.size(), total);
+	unmappableListings->set_name(name);
 	rootFolder->add_feature(unmappableListings);  // kml takes ownership.
 	
 	double mid_lat, mid_lon;
