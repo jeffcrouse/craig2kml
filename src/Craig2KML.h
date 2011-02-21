@@ -7,6 +7,7 @@
  *
  */
 
+#include <stdio.h>
 #include <iostream>
 #include <kml/dom.h>
 #include <kml/engine.h>

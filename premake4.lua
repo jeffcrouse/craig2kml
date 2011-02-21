@@ -19,7 +19,9 @@ project "craig2kml"
 	includedirs { 
 		"/opt/local/include",
 		"/opt/local/include/libxml2",
+		"/usr/include/libxml2",
 		"/usr/local/include/tidy",
+		"/usr/include/tidy",
 		"/usr/local/include/kml/**" }
 	
 configuration "Debug"
