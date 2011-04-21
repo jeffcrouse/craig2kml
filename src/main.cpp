@@ -188,10 +188,10 @@ void help()
 	cerr << endl;
 	cerr << "typical: (-u|--url ) #### [(-o|--outfile) ####]" << endl;
 	cerr << "  where:" << endl;
-	cerr << "  -c (--config) use custom config values";
-	cerr << "  -d (--cachedir) the directory in which to load and save cache files";
-	cerr << "  -h (--help) print a help message";
-	cerr << "  -m (--max) maximum number of listings to include";
+	cerr << "  -c (--config) use custom config values" << endl;
+	cerr << "  -d (--cachedir) the directory in which to load and save cache files" << endl;
+	cerr << "  -h (--help) print a help message" << endl;
+	cerr << "  -m (--max) maximum number of listings to include" << endl;
 	cerr << "  -o (--outfile) is the file in which the kml will be saved" << endl;
 	cerr << "     prints to stdout if no file is provided." << endl;
 	cerr << "  -u (--url) [required]" << endl;

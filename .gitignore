@@ -14,6 +14,8 @@ dsa_priv.pem
 *.perspective
 *.perspectivev3
 *.pbxuser
+xcuserdata
+
 # Generated files
 VersionX-revision.h
 # build products
